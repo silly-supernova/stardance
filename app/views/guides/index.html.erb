@@ -1,7 +1,7 @@
 <% content_for :title, "Guides" %>
 
-<div class="guides-index">
-  <div class="guides-index__container">
+<div class="app-layout">
+  <div class="app-layout__main">
     <header class="guides-index__header">
       <h1 class="guides-index__title">Guides</h1>
       <p class="guides-index__subtitle">
@@ -34,4 +34,6 @@
       </section>
     <% end %>
   </div>
+
+  <%= render DiscoverRailComponent.new %>
 </div>
