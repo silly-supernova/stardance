@@ -473,7 +473,6 @@ Rails.application.routes.draw do
   patch "my/settings", to: "my#update_settings", as: :my_settings
   post "my/stardust_click", to: "my#stardust_click", as: :my_stardust_click
   post "my/dismiss_thing", to: "my#dismiss_thing", as: :dismiss_thing
-  delete "my/club", to: "my#unlink_club", as: :my_club
   get "my/achievements", to: "achievements#index", as: :my_achievements
 
   namespace :seller do

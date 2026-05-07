@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_07_052608) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_07_112505) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -799,13 +799,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_07_052608) do
   end
 
   create_table "users", force: :cascade do |t|
-    t.string "airtable_record_id"
     t.boolean "banned", default: false, null: false
     t.datetime "banned_at"
     t.text "banned_reason"
     t.text "bio"
-    t.string "club_link"
-    t.string "club_name"
     t.datetime "created_at", null: false
     t.string "display_name"
     t.string "email"
@@ -840,7 +837,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_07_052608) do
     t.integer "votes_count"
     t.boolean "voting_locked", default: false, null: false
     t.boolean "ysws_eligible", default: false, null: false
-    t.index ["airtable_record_id"], name: "index_users_on_airtable_record_id", unique: true
     t.index ["email"], name: "index_users_on_email"
     t.index ["session_token"], name: "index_users_on_session_token", unique: true
     t.index ["slack_id"], name: "index_users_on_slack_id", unique: true

@@ -7,8 +7,6 @@
 #  banned_at                            :datetime
 #  banned_reason                        :text
 #  bio                                  :text
-#  club_link                            :string
-#  club_name                            :string
 #  display_name                         :string
 #  email                                :string
 #  enriched_ref                         :string
@@ -42,15 +40,13 @@
 #  ysws_eligible                        :boolean          default(FALSE), not null
 #  created_at                           :datetime         not null
 #  updated_at                           :datetime         not null
-#  airtable_record_id                   :string
 #  slack_id                             :string
 #
 # Indexes
 #
-#  index_users_on_airtable_record_id  (airtable_record_id) UNIQUE
-#  index_users_on_email               (email)
-#  index_users_on_session_token       (session_token) UNIQUE
-#  index_users_on_slack_id            (slack_id) UNIQUE
+#  index_users_on_email          (email)
+#  index_users_on_session_token  (session_token) UNIQUE
+#  index_users_on_slack_id       (slack_id) UNIQUE
 #
 require "test_helper"
 

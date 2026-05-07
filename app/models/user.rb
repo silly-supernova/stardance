@@ -7,8 +7,6 @@
 #  banned_at                            :datetime
 #  banned_reason                        :text
 #  bio                                  :text
-#  club_link                            :string
-#  club_name                            :string
 #  display_name                         :string
 #  email                                :string
 #  enriched_ref                         :string
@@ -42,15 +40,13 @@
 #  ysws_eligible                        :boolean          default(FALSE), not null
 #  created_at                           :datetime         not null
 #  updated_at                           :datetime         not null
-#  airtable_record_id                   :string
 #  slack_id                             :string
 #
 # Indexes
 #
-#  index_users_on_airtable_record_id  (airtable_record_id) UNIQUE
-#  index_users_on_email               (email)
-#  index_users_on_session_token       (session_token) UNIQUE
-#  index_users_on_slack_id            (slack_id) UNIQUE
+#  index_users_on_email          (email)
+#  index_users_on_session_token  (session_token) UNIQUE
+#  index_users_on_slack_id       (slack_id) UNIQUE
 #
 class User < ApplicationRecord
   has_paper_trail ignore: [ :projects_count, :votes_count, :updated_at, :shop_region ], on: [ :update, :destroy ]
@@ -117,24 +113,6 @@ class User < ApplicationRecord
   def roles = granted_roles&.map(&:to_sym) || []
 
   def has_role?(role_name) = roles.include?(role_name.to_sym)
-
-  FILLOUT_CLUB_FORM_URL = "https://forms.hackclub.com/t/24dbqdeN93us"
-
-  def fillout_club_url
-    return nil if airtable_record_id.blank?
-    "#{FILLOUT_CLUB_FORM_URL}?id=#{airtable_record_id}"
-  end
-
-  def club_link_uri
-    return nil if club_link.blank?
-
-    uri = URI.parse(club_link.to_s)
-    uri if uri.scheme&.downcase.in?(%w[http https])
-  rescue URI::InvalidURIError
-    nil
-  end
-
-  def valid_club_link? = club_link_uri.present?
 
   def admin? = has_role?(:admin) || has_role?(:super_admin)
 

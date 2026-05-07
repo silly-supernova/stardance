@@ -24,11 +24,6 @@ class MyController < ApplicationController
     redirect_back fallback_location: root_path, notice: "Settings saved"
   end
 
-  def unlink_club
-    current_user.update!(club_name: nil, club_link: nil)
-    redirect_back fallback_location: root_path, notice: "Club unlinked"
-  end
-
   def stardust_click
     clicks = params[:clicks].to_i.clamp(1, 100)
     current_user.increment!(:stardust_clicks, clicks)

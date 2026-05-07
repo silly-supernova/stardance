@@ -155,25 +155,5 @@
       </div>
     <% end %>
 
-    <div class="settings-form__section">
-      <label class="settings-form__label">Club</label>
-      <% if user.club_name.present? %>
-        <p class="settings-form__club-status">
-          🏫 Linked to <strong><%= user.club_name %></strong>
-        </p>
-        <%= button_to "Unlink club", my_club_path, method: :delete, class: "settings-form__club-unlink", form: { onsubmit: "return confirm('Are you sure you want to unlink your club?')" } %>
-      <% elsif user.airtable_record_id.present? %>
-        <%= link_to "Link your club",
-              user.fillout_club_url,
-              target: "_blank",
-              rel: "noopener",
-              class: "settings-form__club-link" %>
-        <small class="settings-form__hint" style="margin-left: 0;">Connect your Stardance account to your Hack Club.</small>
-      <% else %>
-        <button class="settings-form__club-link settings-form__club-link--pending" disabled>Link your club</button>
-        <small class="settings-form__hint" style="margin-left: 0;">Sync pending — check back soon!</small>
-      <% end %>
-    </div>
-
   <% end %>
 </aside>
