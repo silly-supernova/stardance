@@ -8,7 +8,7 @@ class SupportMailer < ApplicationMailer
       to: Rails.application.credentials.dig(:jelly, :forwarding_address) || ENV.fetch("JELLY_SUPPORT_EMAIL", "jelly@hackclub.com"),
       from: "stardance@hackclub.com",
       reply_to: @sender,
-      subject: "[Forwarded Support] #{@subject}"
+      subject: @subject
     ) do |format|
       if mail_message.multipart?
         format.text { render plain: mail_message.text_part&.decoded } if mail_message.text_part
