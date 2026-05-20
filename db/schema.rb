@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_19_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_20_215823) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -410,6 +410,32 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_19_100000) do
     t.index ["enabled"], name: "index_missions_on_enabled"
     t.index ["featured_at"], name: "index_missions_on_featured_at"
     t.index ["slug"], name: "index_missions_on_slug", unique: true
+  end
+
+  create_table "notifications", force: :cascade do |t|
+    t.bigint "actor_id"
+    t.datetime "created_at", null: false
+    t.datetime "email_delivered_at"
+    t.integer "group_count", default: 1, null: false
+    t.string "group_key"
+    t.jsonb "params", default: {}, null: false
+    t.integer "priority", default: 0, null: false
+    t.datetime "read_at"
+    t.bigint "recipient_id", null: false
+    t.bigint "record_id"
+    t.string "record_type"
+    t.datetime "seen_at"
+    t.datetime "slack_enqueued_at"
+    t.string "type", null: false
+    t.datetime "updated_at", null: false
+    t.index ["actor_id"], name: "index_notifications_on_actor_id"
+    t.index ["recipient_id", "created_at"], name: "index_notifications_on_recipient_id_and_created_at"
+    t.index ["recipient_id", "group_key", "read_at"], name: "index_notifications_on_recipient_id_and_group_key_and_read_at", where: "(group_key IS NOT NULL)"
+    t.index ["recipient_id", "seen_at"], name: "index_notifications_on_recipient_id_and_seen_at"
+    t.index ["recipient_id", "type", "group_key"], name: "index_notifications_unique_unread_aggregate", unique: true, where: "((read_at IS NULL) AND (group_key IS NOT NULL))"
+    t.index ["recipient_id"], name: "index_notifications_on_recipient_id"
+    t.index ["record_type", "record_id"], name: "index_notifications_on_record_type_and_record_id"
+    t.index ["type", "created_at"], name: "index_notifications_on_type_and_created_at"
   end
 
   create_table "post_devlogs", force: :cascade do |t|
@@ -881,16 +907,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_19_100000) do
     t.index ["user_id"], name: "index_user_identities_on_user_id"
   end
 
+  create_table "user_notification_preferences", force: :cascade do |t|
+    t.string "category", null: false
+    t.datetime "created_at", null: false
+    t.boolean "email_enabled"
+    t.boolean "slack_enabled"
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["user_id", "category"], name: "index_user_notification_preferences_on_user_id_and_category", unique: true
+    t.index ["user_id"], name: "index_user_notification_preferences_on_user_id"
+  end
+
   create_table "user_preferences", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.boolean "leaderboard_optin", default: false, null: false
     t.boolean "search_engine_indexing_off", default: false, null: false
-    t.boolean "send_notifications_for_followed_projects", default: true, null: false
-    t.boolean "send_notifications_for_followed_users", default: true, null: false
-    t.boolean "send_notifications_for_new_comments", default: true, null: false
-    t.boolean "send_notifications_for_new_followers", default: true, null: false
     t.boolean "send_votes_to_slack", default: false, null: false
-    t.boolean "stardust_balance_notifications", default: false, null: false
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
     t.index ["leaderboard_optin"], name: "index_user_preferences_on_leaderboard_optin"
@@ -927,7 +959,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_19_100000) do
     t.text "internal_notes"
     t.string "last_name"
     t.boolean "manual_ysws_override"
-    t.boolean "mission_review_notifications", default: true, null: false
     t.datetime "onboarded_at"
     t.string "ref"
     t.string "regions", default: [], array: true
@@ -1030,6 +1061,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_19_100000) do
   add_foreign_key "mission_submissions", "post_ship_events", column: "ship_event_id"
   add_foreign_key "mission_submissions", "shop_orders"
   add_foreign_key "mission_submissions", "users", column: "reviewed_by_id"
+  add_foreign_key "notifications", "users", column: "actor_id", on_delete: :nullify
+  add_foreign_key "notifications", "users", column: "recipient_id", on_delete: :cascade
   add_foreign_key "posts", "projects"
   add_foreign_key "posts", "users"
   add_foreign_key "project_follows", "projects"
@@ -1069,6 +1102,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_19_100000) do
   add_foreign_key "user_hackatime_projects", "projects"
   add_foreign_key "user_hackatime_projects", "users"
   add_foreign_key "user_identities", "users"
+  add_foreign_key "user_notification_preferences", "users", on_delete: :cascade
   add_foreign_key "user_preferences", "users"
   add_foreign_key "user_vote_verdicts", "users"
   add_foreign_key "votes", "post_ship_events", column: "ship_event_id"
