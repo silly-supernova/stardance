@@ -165,30 +165,27 @@ class ShipEventPayoutCalculator
   end
 
   def notify_payout_issued(user, stardust:, hours:, multiplier:, blessing: "neutral")
-    return unless user.slack_id.present?
-
     project = @ship_event.post&.project
     ship_date = @ship_event.post&.created_at&.strftime("%b %-d, %Y")
     project_title = project&.title || "Ship ##{@ship_event.id}"
 
-    SendSlackDmJob.perform_later(
-      user.slack_id,
-      nil,
-      blocks_path: "notifications/payouts/ship_event_issued",
-      locals: {
-        project_title: project_title,
-        ship_date: ship_date,
-        hours: hours&.round(2),
-        stardust: stardust&.to_i,
-        multiplier: multiplier&.round(2),
-        blessing: blessing
+    Notifications::Payouts::ShipEventIssued.notify(
+      recipient: user,
+      record: @ship_event,
+      params: {
+        "project_title" => project_title,
+        "ship_date"     => ship_date,
+        "hours"         => hours&.round(2),
+        "stardust"      => stardust&.to_i,
+        "multiplier"    => multiplier&.round(2),
+        "blessing"      => blessing
       }
     )
   end
 
   def notify_vote_deficit(user, votes_needed)
-    return unless user.slack_id.present?
     return unless Flipper.enabled?(:voting)
+
     cache_key = "vote_deficit_notified:#{@ship_event.id}"
     return if Rails.cache.exist?(cache_key)
 
@@ -197,14 +194,12 @@ class ShipEventPayoutCalculator
     project = @ship_event.post&.project
     project_title = project&.title
 
-    SendSlackDmJob.perform_later(
-      user.slack_id,
-      nil,
-      blocks_path: "notifications/payouts/vote_deficit_blocked",
-      locals: {
-        ship_event: @ship_event,
-        votes_needed: votes_needed,
-        project_title: project_title
+    Notifications::Payouts::VoteDeficitBlocked.notify(
+      recipient: user,
+      record: @ship_event,
+      params: {
+        "votes_needed"  => votes_needed,
+        "project_title" => project_title
       }
     )
   end
