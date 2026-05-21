@@ -178,7 +178,7 @@
       td:nth-child(1) {
         color: var(--color-brand-mint);
         font-weight: 700;
-        font-family: 'Courier New', monospace;
+        font-family: "Courier New", monospace;
       }
 
       // Project Type column
@@ -279,7 +279,7 @@
         &:nth-child(1) {
           color: var(--color-brand-mint);
           font-weight: 700;
-          font-family: 'Courier New', monospace;
+          font-family: "Courier New", monospace;
         }
 
         &:nth-child(2) {
@@ -1033,7 +1033,9 @@
     gap: var(--space-l);
     position: sticky;
     top: var(--space-l);
-    transition: transform 300ms ease, opacity 300ms ease;
+    transition:
+      transform 300ms ease,
+      opacity 300ms ease;
 
     @media (prefers-reduced-motion: reduce) {
       transition: none;
@@ -1138,7 +1140,9 @@
     }
 
     &:hover {
-      right: calc((var(--toggle-tab-width) * -1) + var(--toggle-tab-overlap) - 6px);
+      right: calc(
+        (var(--toggle-tab-width) * -1) + var(--toggle-tab-overlap) - 6px
+      );
       box-shadow: -3px 4px 8px rgba(0, 0, 0, 0.2);
       border-color: var(--color-brand-mint);
       color: var(--color-brand-mint);
