@@ -79,13 +79,19 @@ class UsersController < ApplicationController
                 .preload(:project, :user, postable: [ { attachments_attachments: :blob } ])
                 .order(created_at: :desc)
 
-    scope = hide_deleted_devlogs(scope)  unless policy(@user).view_deleted_devlogs?
+    scope = hide_deleted_devlogs(scope) unless policy(@user).view_deleted_devlogs?
+    scope = hide_rejected_ships(scope)
     scope
   end
 
   def hide_deleted_devlogs(scope)
     deleted_ids = Post::Devlog.unscoped.deleted.pluck(:id)
     scope.where.not(postable_type: "Post::Devlog", postable_id: deleted_ids)
+  end
+
+  def hide_rejected_ships(scope)
+    rejected_ids = Post::ShipEvent.where(certification_status: "rejected").pluck(:id)
+    scope.where.not(postable_type: "Post::ShipEvent", postable_id: rejected_ids)
   end
 
   def profile_stats

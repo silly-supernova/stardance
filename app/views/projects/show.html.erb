@@ -19,7 +19,6 @@
   follower_count = @follower_count || @project.project_follows.size
   viewer_follow = @viewer_follow
   total_hours = @total_hours || (@project.duration_seconds / 3600.0).round
-  latest_ship_post = @latest_ship_post || @posts.find { |p| p.postable_type == "Post::ShipEvent" }
   can_edit_project = @can_edit_project
 %>
 
@@ -431,12 +430,15 @@
 
     <% if @posts.any? %>
       <section class="project-show__feed" aria-label="Project feed">
+        <% ship_count = @posts.count { |p| p.postable_type == "Post::ShipEvent" } %>
+        <% ship_index = 0 %>
         <% @posts.each do |post| %>
           <% if post.postable_type == "Post::ShipEvent" %>
+            <% ship_index += 1 %>
             <%= render "projects/ship_card",
                        post: post,
                        project: @project,
-                       latest: post == latest_ship_post %>
+                       ship_number: ship_count - ship_index + 1 %>
           <% else %>
             <%= render PostComponent.new(post: post, current_user: current_user, theme: :profile_dark) %>
           <% end %>
