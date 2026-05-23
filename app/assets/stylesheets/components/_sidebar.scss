@@ -17,57 +17,90 @@
   background-color: var(--color-space-bg);
 
   .modal {
-    border: none;
-    border-radius: var(--border-radius);
-    border: 0.5rem solid var(--color-brown-700);
-    padding: var(--space-l);
-    background: var(--color-bg);
-    box-shadow: var(--shadow);
-    max-width: 500px;
+    border-radius: var(--profile-radius);
+    border: 2px solid var(--color-border-input);
+    padding: var(--space-xl);
+    background: var(--color-set-2-bg);
+    box-shadow: 0 24px 60px var(--color-shadow-deep);
+    max-width: 520px;
     width: 90%;
-    color: var(--color-text-body);
+    color: var(--color-space-text);
     position: fixed;
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
 
     &::backdrop {
-      background: rgba(0, 0, 0, 0.5);
-      backdrop-filter: blur(2px);
+      background: var(--color-backdrop);
+      backdrop-filter: blur(4px);
     }
 
     &__title {
-      text-align: center;
-      font-family: var(--font-family-subtitle);
-      font-size: 2rem;
-      background-color: var(--color-brown-700);
-      color: var(--color-bg);
+      margin: 0 0 var(--space-l);
+      font-family: "Playfair Display", "Times New Roman", Georgia, serif;
+      font-style: italic;
+      font-weight: 700;
+      font-size: var(--font-size-xxxl);
+      line-height: var(--line-height-headers);
+      color: var(--color-space-text);
+      background-color: transparent;
+    }
+
+    &__description {
+      margin: calc(var(--space-l) * -0.5) 0 var(--space-l);
+      color: var(--color-space-text-muted);
+      font-family: var(--font-family-text);
+      font-size: var(--font-size-m);
+      line-height: 1.45;
     }
 
     &__loading {
       text-align: center;
-      color: var(--color-text-muted);
-      margin-top: 0.5em;
+      color: var(--color-space-text-muted);
+      margin-top: var(--space-xs);
     }
 
     &__actions {
-      margin-top: var(--space-m);
+      margin-top: var(--space-xl);
       display: flex;
       justify-content: flex-end;
-      gap: 1em;
+      gap: var(--space-s);
     }
 
     &__actions-close {
-      background-color: var(--color-brown-500);
-      font-size: 1rem;
-      padding: 0.2rem 0.5rem;
-      border: 2px solid var(--color-brown-700);
-      border-radius: 5px;
-      color: var(--color-bg);
+      font-family: var(--font-family-text);
+      font-size: var(--font-size-m);
+      font-weight: 700;
+      padding: var(--space-xxs) var(--space-m);
+      border-radius: 999px;
+      border: 2px solid var(--color-border-input);
+      background: transparent;
+      color: var(--color-space-text);
       cursor: pointer;
+      transition:
+        background-color 160ms ease,
+        color 160ms ease,
+        border-color 160ms ease,
+        filter 160ms ease;
 
       &:hover {
-        filter: brightness(1.1);
+        border-color: var(--color-border-input-focus);
+      }
+
+      &--primary {
+        background: var(--color-brand-highlight);
+        border-color: var(--color-brand-highlight);
+        color: var(--color-set-1-bg);
+
+        &:hover {
+          background: var(--color-brand-highlight-secondary);
+          border-color: var(--color-brand-highlight-secondary);
+        }
+
+        &:active {
+          background: #ffffff;
+          border-color: #ffffff;
+        }
       }
     }
   }
@@ -115,6 +148,23 @@
   width: 100%;
   border-radius: calc(var(--border-radius) / 1.5);
   z-index: 0;
+}
+
+.sidebar__nav-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.4rem;
+  height: 1.4rem;
+  padding: 0 0.45rem;
+  border-radius: 999px;
+  background: var(--color-brand-salmon);
+  color: var(--color-space-bg);
+  font-size: var(--font-size-xs);
+  font-family: var(--font-family-text);
+  font-weight: 700;
+  line-height: 1;
+  margin-left: auto;
 }
 
 button.sidebar__nav-link {
@@ -184,6 +234,25 @@ button.sidebar__nav-link {
   border: 6px solid transparent;
   border-right-color: var(--color-space-bg-2);
   border-left: 0;
+}
+
+// Top-positioned variant: popover sits above the trigger, arrow points down.
+.locked-tab-popover--top {
+  transform: translateY(4px);
+
+  &.locked-tab-popover--visible {
+    transform: translateY(0);
+  }
+
+  &::before {
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: var(--color-space-bg-2);
+    border-bottom: 0;
+    border-right-color: transparent;
+  }
 }
 
 .sidebar__nav-link {

@@ -4,10 +4,6 @@ class GuidesController < ApplicationController
   def index
     @guides_by_category = Guide.by_category
     @category_order = Guide.category_order
-    @missions = Mission.available
-                       .includes(:steps, :prizes, icon_attachment: :blob)
-                       .order(featured_at: :desc, name: :asc)
-                       .limit(12)
   end
 
   def show

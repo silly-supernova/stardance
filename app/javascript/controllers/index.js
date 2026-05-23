@@ -19,6 +19,9 @@ application.register("command-palette", CommandPaletteController);
 import ComposerController from "./composer_controller";
 application.register("composer", ComposerController);
 
+import EmojiPickerController from "./emoji_picker_controller";
+application.register("emoji-picker", EmojiPickerController);
+
 import CountdownClockController from "./countdown_clock_controller";
 application.register("countdown-clock", CountdownClockController);
 
@@ -31,6 +34,9 @@ application.register("customs-warning", CustomsWarningController);
 import DecisionTreeController from "./decision_tree_controller";
 application.register("decision-tree", DecisionTreeController);
 
+import DisabledTooltipController from "./disabled_tooltip_controller";
+application.register("disabled-tooltip", DisabledTooltipController);
+
 import FallingStarController from "./falling_star_controller";
 application.register("falling-star", FallingStarController);
 
@@ -39,6 +45,9 @@ application.register("faq-accordion", FaqAccordionController);
 
 import FileUploadController from "./file_upload_controller";
 application.register("file-upload", FileUploadController);
+
+import StarImageInputController from "./star_image_input_controller";
+application.register("star-image-input", StarImageInputController);
 
 import FlashController from "./flash_controller";
 application.register("flash", FlashController);
@@ -150,6 +159,9 @@ application.register("user-ref-modal", UserRefModalController);
 
 import VimeoPlayerController from "./vimeo_player_controller";
 application.register("vimeo-player", VimeoPlayerController);
+
+import WelcomeTourController from "./welcome_tour_controller";
+application.register("welcome-tour", WelcomeTourController);
 
 import WhatIsThisController from "./what_is_this_controller";
 application.register("what-is-this", WhatIsThisController);

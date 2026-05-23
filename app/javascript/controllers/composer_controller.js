@@ -1,48 +1,158 @@
 import { Controller } from "@hotwired/stimulus";
 
 export default class extends Controller {
-  static targets = ["dropZone", "grid", "fileInput", "info", "timeLabel"];
+  static targets = [
+    "dropZone",
+    "grid",
+    "fileInput",
+    "footer",
+    "timeFrame",
+    "warn",
+    "form",
+    "textarea",
+    "submit",
+  ];
   static values = {
     maxFiles: { type: Number, default: 4 },
     previewTimeUrl: String,
+    hackatimeLinked: { type: Boolean, default: false },
+    simpleMode: { type: Boolean, default: false },
   };
 
   #files = [];
   #urls = [];
-  #timeFetched = false;
+  #composerOpen = false;
+  #previewSeconds = 0;
+
+  #onTimeFrameLoad = (event) => {
+    if (!this.hasTimeFrameTarget || event.target !== this.timeFrameTarget)
+      return;
+    const hint = this.timeFrameTarget.querySelector("[data-seconds]");
+    this.#previewSeconds = hint ? parseInt(hint.dataset.seconds || "0", 10) : 0;
+    this.#updateSubmit();
+  };
 
   connect() {
-    this.#acceptedTypes = this.fileInputTarget.accept
-      .split(",")
-      .map((t) => t.trim());
+    if (this.hasFileInputTarget) {
+      this.#acceptedTypes = this.fileInputTarget.accept
+        .split(",")
+        .map((t) => t.trim());
+    }
+    this.element.addEventListener("turbo:frame-load", this.#onTimeFrameLoad);
+    this.#resizeTextarea();
+    this.#updateSubmit();
+    this.#loadPreviewTime();
   }
 
   disconnect() {
+    this.element.removeEventListener("turbo:frame-load", this.#onTimeFrameLoad);
     this.#revokeUrls();
   }
 
-  showInfo() {
-    if (!this.hasInfoTarget) return;
-    this.infoTarget.hidden = false;
-    if (
-      this.hasTimeLabelTarget &&
-      this.hasPreviewTimeUrlValue &&
-      !this.#timeFetched
-    ) {
-      this.#timeFetched = true;
-      fetch(this.previewTimeUrlValue, {
-        headers: { Accept: "application/json" },
-      })
-        .then((r) => r.json())
-        .then(({ preview_time }) => {
-          this.timeLabelTarget.textContent = preview_time
-            ? `${preview_time} will be logged`
-            : "Could not load coding time";
-        })
-        .catch(() => {
-          this.timeLabelTarget.textContent = "Could not load coding time";
-        });
+  autogrow() {
+    this.#resizeTextarea();
+  }
+
+  refreshSubmit() {
+    this.#updateSubmit();
+  }
+
+  collapseIfEmpty() {
+    setTimeout(() => {
+      if (this.element.contains(document.activeElement)) return;
+      const hasBody =
+        this.hasTextareaTarget && this.textareaTarget.value.trim().length > 0;
+      const hasFiles = this.#files.length > 0;
+      if (!hasBody && !hasFiles) {
+        this.#composerOpen = false;
+        this.#updateSubmit();
+      }
+    }, 150);
+  }
+
+  #updateSubmit() {
+    let enabled;
+    if (this.simpleModeValue) {
+      enabled =
+        this.hasTextareaTarget && this.textareaTarget.value.trim().length > 0;
+    } else {
+      enabled = this.#files.length > 0 && this.#previewSeconds >= 15 * 60;
     }
+    if (this.hasSubmitTarget) {
+      this.submitTarget.disabled = !enabled;
+      // Toggle whichever button-component's disabled-modifier the target
+      // happens to use. Harmless if the class isn't present.
+      this.submitTarget.classList.toggle("action-btn--disabled", !enabled);
+      this.submitTarget.classList.toggle(
+        "special-action-btn--disabled",
+        !enabled,
+      );
+    }
+  }
+
+  #resizeTextarea() {
+    if (!this.hasTextareaTarget) return;
+    const el = this.textareaTarget;
+    el.style.height = "auto";
+    // scrollHeight is 0 when the element is inside a hidden dialog (display:none).
+    // In that case leave height as "auto" so the rows attribute dictates the size
+    // once the dialog opens, rather than locking it to 0px.
+    if (el.scrollHeight > 0) {
+      el.style.height = `${el.scrollHeight}px`;
+    }
+  }
+
+  showInfo() {
+    this.#composerOpen = true;
+    if (this.hasFooterTarget) this.footerTarget.hidden = false;
+    this.#updateSubmit();
+    this.#loadPreviewTime();
+  }
+
+  selectProject(event) {
+    event.preventDefault();
+    const { postUrl, previewUrl, editUrl, hackatimeLinked } = event.params;
+    const linked = !!hackatimeLinked;
+    const chip = event.currentTarget;
+
+    chip.parentElement
+      .querySelectorAll(".feed-composer__chip--active")
+      .forEach((el) => {
+        el.classList.remove("feed-composer__chip--active");
+        el.removeAttribute("aria-current");
+      });
+    chip.classList.add("feed-composer__chip--active");
+    chip.setAttribute("aria-current", "true");
+
+    if (this.hasFormTarget) this.formTarget.action = postUrl;
+    this.previewTimeUrlValue = previewUrl;
+    this.hackatimeLinkedValue = linked;
+
+    this.#previewSeconds = 0;
+    if (this.hasTimeFrameTarget) {
+      this.timeFrameTarget.hidden = !linked;
+      this.timeFrameTarget.removeAttribute("src");
+      this.timeFrameTarget.innerHTML =
+        '<span class="feed-composer__info-text">Loading time...</span>';
+    }
+    if (this.hasWarnTarget) {
+      this.warnTarget.hidden = linked;
+      if (editUrl) this.warnTarget.href = editUrl;
+    }
+
+    if (this.#composerOpen) this.#loadPreviewTime();
+    this.#updateSubmit();
+  }
+
+  #loadPreviewTime() {
+    if (!this.hasTimeFrameTarget || this.timeFrameTarget.hidden) return;
+    if (!this.hasPreviewTimeUrlValue) return;
+    if (this.timeFrameTarget.getAttribute("src")) return;
+    this.timeFrameTarget.setAttribute("src", this.previewTimeUrlValue);
+  }
+
+  openFilePicker() {
+    this.fileInputTarget.click();
   }
 
   selectFiles() {
@@ -51,17 +161,17 @@ export default class extends Controller {
 
   drop(event) {
     event.preventDefault();
-    this.dropZoneTarget.classList.remove("feed-composer__main--dragover");
+    this.dropZoneTarget.classList.remove("feed-composer--dragover");
     this.#addFiles(event.dataTransfer.files);
   }
 
   dragover(event) {
     event.preventDefault();
-    this.dropZoneTarget.classList.add("feed-composer__main--dragover");
+    this.dropZoneTarget.classList.add("feed-composer--dragover");
   }
 
   dragleave() {
-    this.dropZoneTarget.classList.remove("feed-composer__main--dragover");
+    this.dropZoneTarget.classList.remove("feed-composer--dragover");
   }
 
   paste(event) {
@@ -97,6 +207,7 @@ export default class extends Controller {
       this.gridTarget.hidden = true;
       this.gridTarget.dataset.count = "0";
       this.#syncInput();
+      this.#updateSubmit();
       return;
     }
 
@@ -145,6 +256,7 @@ export default class extends Controller {
     });
 
     this.#syncInput();
+    this.#updateSubmit();
   }
 
   #syncInput() {

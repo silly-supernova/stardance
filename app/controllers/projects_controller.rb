@@ -1,11 +1,24 @@
 class ProjectsController < ApplicationController
   before_action :set_project_minimal, only: [ :edit, :update, :destroy ]
-  before_action :set_project, only: [ :show, :readme ]
+  before_action :set_project, only: [ :show, :readme, :add_test_time ]
+  before_action :redirect_guest_owner_to_link!, only: [ :show, :readme, :edit, :update ]
 
   def show
     authorize @project
 
     @body_class = "app-layout-page"
+    if params[:welcome] == "1"
+      welcomed_ids = Array(session[:project_welcomed_ids])
+      @body_class += " project-welcoming" unless welcomed_ids.include?(@project.id)
+      session[:project_welcomed_ids] = (welcomed_ids + [ @project.id ]).last(20)
+
+      # Strip wizard pages from the back-stack so the project page's back
+      # button skips the (one-time) setup flow.
+      if session[:previous_pages].is_a?(Array)
+        session[:previous_pages] = session[:previous_pages].reject { |p| p.to_s.include?("/projects/setup") }
+      end
+    end
+
     prepare_project_show_context
   end
 
@@ -17,6 +30,8 @@ class ProjectsController < ApplicationController
     @follower_count = @project.project_follows.size
     @viewer_follow = current_user && @project.project_follows.find_by(user_id: current_user.id)
     @total_hours = (@project.duration_seconds / 3600.0).round
+    @test_time_granted = session[test_time_session_key].present?
+    @hackatime_times = {}
 
     if @is_member && current_user
       @composer_devlog = Post::Devlog.new
@@ -26,11 +41,13 @@ class ProjectsController < ApplicationController
 
       if @hackatime_linked
         @linked_hackatime_projects = @project.hackatime_projects
-        @all_hackatime_projects = current_user.hackatime_projects.includes(:project)
+        @all_hackatime_projects = current_user.hackatime_projects
         result = current_user.try_sync_hackatime_data!
         @hackatime_times = result&.dig(:projects) || {}
 
         linked_ids = @linked_hackatime_projects.map(&:id).to_set
+        taken_project_ids = @all_hackatime_projects.map(&:project_id).compact.uniq - [ @project.id ]
+        taken_titles = Project.where(id: taken_project_ids).pluck(:id, :title).to_h
         @hackatime_dropdown_items = @all_hackatime_projects.map do |hp|
           seconds = @hackatime_times[hp.name] || 0
           taken = hp.project_id.present? && hp.project_id != @project.id
@@ -40,7 +57,7 @@ class ProjectsController < ApplicationController
             seconds: seconds,
             hours: (seconds / 3600.0).round(1),
             taken: taken,
-            taken_by: taken ? hp.project&.title : nil,
+            taken_by: taken ? taken_titles[hp.project_id] : nil,
             linked: linked_ids.include?(hp.id)
           }
         end
@@ -65,11 +82,25 @@ class ProjectsController < ApplicationController
       @posts = @posts.reject { |post| post.postable_type == "Post::GitCommit" }
     end
 
-    @posts = @posts.reject { |post| post.postable_type == "Post::ShipEvent" && post.postable.certification_status != "approved" }
+    @posts = @posts.reject { |post| post.postable_type == "Post::ShipEvent" && post.postable.certification_status == "rejected" }
 
     @show_project_onboarding = @is_member && @posts.empty?
-    @show_hackatime_onboarding = @show_project_onboarding && current_user && current_user.hackatime_identity.blank?
     @project_onboarding_mission = @project.current_mission
+
+    @show_project_tour = params[:welcome] == "1" && current_user.present? && @is_member &&
+                         current_user.projects.count == 1 && !session[:project_tour_seen]
+
+    session[:project_tour_seen] = true if @show_project_tour
+
+    # Drives the post-Hackatime-link onboarding overlay: the user linked
+    # Hackatime at the account level, this is their first/only project, but
+    # they haven't attached a Hackatime project to it yet. Stateful (no
+    # session flag) so it keeps prompting until the user links a project.
+    @show_first_hackatime_tour = current_user.present? && @is_member &&
+                                 @hackatime_linked &&
+                                 current_user.projects.count == 1 &&
+                                 @project.hackatime_keys.blank? &&
+                                 !@show_project_tour
 
     if current_user
       devlog_ids = @posts.select { |p| p.postable_type == "Post::Devlog" }.map(&:postable_id)
@@ -106,7 +137,31 @@ class ProjectsController < ApplicationController
   end
   private :prepare_project_show_context
 
+  def add_test_time
+    authorize @project
+
+    hackatime_project = current_user.hackatime_projects.find_or_initialize_by(name: test_time_hackatime_project_name)
+    hackatime_project.project = @project
+    hackatime_project.save!
+
+    session[test_time_session_key] = true
+    redirect_back fallback_location: project_path(@project),
+                  notice: "15 minutes of test time added - post your devlog now"
+  rescue ActiveRecord::RecordInvalid => e
+    redirect_back fallback_location: project_path(@project),
+                  alert: e.record.errors.full_messages.to_sentence
+  end
+
   def new
+    if current_user&.projects&.none?
+      # /projects/new just bounces to setup for first-timers — pop it from the
+      # back-stack so the idea step's back button skips over it.
+      if session[:previous_pages].is_a?(Array)
+        session[:previous_pages].delete_if { |p| p.to_s.include?("/projects/new") }
+      end
+      redirect_to projects_setup_path and return
+    end
+
     @project = Project.new
     authorize @project
     @missions = Mission.available
@@ -153,7 +208,8 @@ class ProjectsController < ApplicationController
         @project.missions << mission if mission
       end
 
-      redirect_to project_path(@project)
+      first_project = current_user.projects.count == 1
+      redirect_to project_path(@project, first_project ? { welcome: 1 } : {})
     else
       flash[:alert] = "Failed to create project: #{@project.errors.full_messages.join(', ')}"
       @missions = Mission.available
@@ -179,10 +235,37 @@ class ProjectsController < ApplicationController
     link_hackatime_projects if success
     # 2nd check w/ @project.errors.empty? is not redudant. this is ensures that hackatime is linked!
     if success && @project.errors.empty?
-      flash[:notice] = "Project updated successfully"
-      redirect_to url_from(params[:return_to]) || project_path(@project)
+      respond_to do |format|
+        format.turbo_stream do
+          if params[:return_to].present?
+            flash[:notice] = "Project updated successfully"
+            redirect_to url_from(params[:return_to])
+          else
+            flash.now[:notice] = "Project updated successfully"
+            render turbo_stream: turbo_stream.update("flash-region", partial: "shared/flash")
+          end
+        end
+        format.html do
+          flash[:notice] = "Project updated successfully"
+          redirect_to url_from(params[:return_to]) || project_path(@project)
+        end
+      end
     else
-      flash.now[:alert] = "Failed to update project: #{@project.errors.full_messages.join(', ')}"
+      respond_to do |format|
+        format.turbo_stream do
+          if params[:return_to].present?
+            flash[:alert] = "Failed to update project: #{@project.errors.full_messages.join(', ')}"
+            redirect_to url_from(params[:return_to])
+          else
+            flash.now[:alert] = "Failed to update project: #{@project.errors.full_messages.join(', ')}"
+            render turbo_stream: turbo_stream.update("flash-region", partial: "shared/flash"), status: :unprocessable_entity
+          end
+        end
+        format.html do
+          flash[:alert] = "Failed to update project: #{@project.errors.full_messages.join(', ')}"
+          redirect_to url_from(params[:return_to]) || edit_project_path(@project)
+        end
+      end
     end
   end
 
@@ -285,8 +368,15 @@ class ProjectsController < ApplicationController
     @project = Project.find(params[:id])
   end
 
+  def redirect_guest_owner_to_link!
+    return unless current_user&.guest?
+    return unless @project&.memberships&.exists?(user_id: current_user.id, role: :owner)
+
+    redirect_to projects_setup_link_account_path, alert: "Finish setting up your account to keep working on your project."
+  end
+
   def project_params
-    params.require(:project).permit(:title, :description, :demo_url, :repo_url, :readme_url, :banner, :ai_declaration)
+    params.require(:project).permit(:title, :description, :demo_url, :repo_url, :readme_url, :banner, :ai_declaration, hackatime_project_ids: [])
   end
 
   def hackatime_project_ids
@@ -418,5 +508,13 @@ class ProjectsController < ApplicationController
   def load_project_times
     result = current_user.try_sync_hackatime_data!
     @project_times = result&.dig(:projects) || {}
+  end
+
+  def test_time_session_key
+    "test_time_project_#{@project.id}"
+  end
+
+  def test_time_hackatime_project_name
+    "stardance-test-time-#{@project.id}"
   end
 end
