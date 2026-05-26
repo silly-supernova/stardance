@@ -5,42 +5,20 @@ module Admin::ReviewsHelper
   def parse_repo_info(repo_url)
     return nil if repo_url.blank?
 
-    begin
-      uri = URI.parse(repo_url)
-    rescue URI::InvalidURIError
-      return nil
-    end
+    # Use GitHost service to parse the URL
+    git_host = GitHost::Base.for(repo_url)
+    return nil unless git_host
 
-    return nil unless uri.host
-
-    host = uri.host.downcase
-    path = uri.path
-
-    # Remove leading slash and split path
-    path_parts = path.sub(/^\//, "").split("/")
-    return nil if path_parts.empty?
-
-    username = path_parts.first
+    # Extract username from owner (for GitHub) or parse from URL (for generic git hosts)
+    username = git_host.owner || extract_username_from_url(repo_url)
     return nil if username.blank?
 
-    # Detect platform based on host
-    platform_info = case host
-    when /github\.com$/
-      { platform: "github", platform_name: "GitHub", icon: "github" }
-    when /gitlab\.com$/
-      { platform: "gitlab", platform_name: "GitLab", icon: "gitlab" }
-    when /codeberg\.org$/
-      { platform: "codeberg", platform_name: "Codeberg", icon: "codeberg" }
-    when /bitbucket\.org$/
-      { platform: "bitbucket", platform_name: "Bitbucket", icon: "bitbucket" }
-    when /sr\.ht$/, /git\.sr\.ht$/
-      { platform: "sourcehut", platform_name: "SourceHut", icon: "sourcehut" }
-    else
-      # Generic git hosting
-      { platform: "git", platform_name: host, icon: "git" }
-    end
-
-    platform_info.merge(username: username)
+    {
+      platform: git_host.provider_name,
+      platform_name: git_host.provider_display_name,
+      username: username,
+      icon: git_host.provider_name
+    }
   end
 
   # Fetch platform contribution stats for a user
@@ -174,16 +152,19 @@ module Admin::ReviewsHelper
     case platform
     when "github"
       "https://github.com/#{username}"
-    when "gitlab"
+    when "gitlab.com"
       "https://gitlab.com/#{username}"
-    when "codeberg"
+    when "codeberg.org"
       "https://codeberg.org/#{username}"
-    when "bitbucket"
+    when "bitbucket.org"
       "https://bitbucket.org/#{username}"
-    when "sourcehut"
-      "https://sr.ht/~#{username}"
+    when "git.sr.ht", "sr.ht"
+      # SourceHut usernames include the ~ prefix
+      username_with_tilde = username.start_with?("~") ? username : "~#{username}"
+      "https://sr.ht/#{username_with_tilde}"
     else
-      nil # Can't generate URL for unknown platforms
+      # Generic fallback: try to construct URL from hostname
+      "https://#{platform}/#{username}"
     end
   end
 
@@ -203,6 +184,16 @@ module Admin::ReviewsHelper
   end
 
   private
+
+  # Extract username from URL path (fallback for GitCli which doesn't parse owner)
+  # Returns the first path component (username/org) or nil
+  def extract_username_from_url(repo_url)
+    uri = URI.parse(repo_url)
+    path_parts = uri.path.to_s.sub(/^\//, "").split("/")
+    path_parts.first
+  rescue URI::InvalidURIError
+    nil
+  end
 
   # Calculate contribution level based on count
   # 0 contributions = 0, <10 = 1, <20 = 2, <25 = 3, <30 = 4, >=30 = 5

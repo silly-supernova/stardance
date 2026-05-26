@@ -13,37 +13,37 @@ class Admin::ReviewsHelperTest < ActionView::TestCase
   test "parse_repo_info extracts GitLab username" do
     result = parse_repo_info("https://gitlab.com/gitlab-org/gitlab")
 
-    assert_equal "gitlab", result[:platform]
+    assert_equal "gitlab.com", result[:platform]
     assert_equal "GitLab", result[:platform_name]
     assert_equal "gitlab-org", result[:username]
-    assert_equal "gitlab", result[:icon]
+    assert_equal "gitlab.com", result[:icon]
   end
 
   test "parse_repo_info extracts Codeberg username" do
     result = parse_repo_info("https://codeberg.org/forgejo/forgejo")
 
-    assert_equal "codeberg", result[:platform]
+    assert_equal "codeberg.org", result[:platform]
     assert_equal "Codeberg", result[:platform_name]
     assert_equal "forgejo", result[:username]
-    assert_equal "codeberg", result[:icon]
+    assert_equal "codeberg.org", result[:icon]
   end
 
   test "parse_repo_info extracts Bitbucket username" do
     result = parse_repo_info("https://bitbucket.org/atlassian/python-bitbucket")
 
-    assert_equal "bitbucket", result[:platform]
+    assert_equal "bitbucket.org", result[:platform]
     assert_equal "Bitbucket", result[:platform_name]
     assert_equal "atlassian", result[:username]
-    assert_equal "bitbucket", result[:icon]
+    assert_equal "bitbucket.org", result[:icon]
   end
 
   test "parse_repo_info extracts SourceHut username" do
     result = parse_repo_info("https://git.sr.ht/~sircmpwn/aerc")
 
-    assert_equal "sourcehut", result[:platform]
+    assert_equal "git.sr.ht", result[:platform]
     assert_equal "SourceHut", result[:platform_name]
     assert_equal "~sircmpwn", result[:username]
-    assert_equal "sourcehut", result[:icon]
+    assert_equal "git.sr.ht", result[:icon]
   end
 
   test "parse_repo_info handles GitHub URL with .git extension" do
