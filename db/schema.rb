@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_27_170653) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_27_233936) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -164,6 +164,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_170653) do
     t.bigint "ysws_review_id", null: false
     t.index ["post_devlog_id"], name: "index_certification_devlog_reviews_on_post_devlog_id"
     t.index ["ysws_review_id"], name: "index_certification_devlog_reviews_on_ysws_review_id"
+  end
+
+  create_table "certification_ship_reviews", force: :cascade do |t|
+    t.datetime "claim_expires_at"
+    t.datetime "claimed_at"
+    t.datetime "created_at", null: false
+    t.datetime "decided_at"
+    t.text "feedback"
+    t.text "internal_reason"
+    t.integer "lock_version", default: 0, null: false
+    t.bigint "project_id", null: false
+    t.bigint "reviewer_id"
+    t.integer "status", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.index ["decided_at"], name: "index_certification_ship_reviews_on_decided_at"
+    t.index ["project_id"], name: "index_ship_reviews_unique_pending_project", unique: true, where: "(status = 0)"
+    t.index ["reviewer_id"], name: "index_certification_ship_reviews_on_reviewer_id"
+    t.index ["status", "claim_expires_at"], name: "idx_on_status_claim_expires_at_c7a5e87a52"
   end
 
   create_table "certification_ysws_reviews", force: :cascade do |t|
@@ -655,24 +673,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_170653) do
     t.index ["confirmation_token"], name: "index_rsvps_on_confirmation_token", unique: true
   end
 
-  create_table "ship_reviews", force: :cascade do |t|
-    t.datetime "claim_expires_at"
-    t.datetime "claimed_at"
-    t.datetime "created_at", null: false
-    t.datetime "decided_at"
-    t.text "feedback"
-    t.text "internal_reason"
-    t.integer "lock_version", default: 0, null: false
-    t.bigint "project_id", null: false
-    t.bigint "reviewer_id"
-    t.integer "status", default: 0, null: false
-    t.datetime "updated_at", null: false
-    t.index ["decided_at"], name: "index_ship_reviews_on_decided_at"
-    t.index ["project_id"], name: "index_ship_reviews_unique_pending_project", unique: true, where: "(status = 0)"
-    t.index ["reviewer_id"], name: "index_ship_reviews_on_reviewer_id"
-    t.index ["status", "claim_expires_at"], name: "index_ship_reviews_on_status_and_claim_expires_at"
-  end
-
   create_table "shop_card_grants", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.integer "expected_amount_cents"
@@ -1052,6 +1052,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_170653) do
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "certification_devlog_reviews", "certification_ysws_reviews", column: "ysws_review_id"
   add_foreign_key "certification_devlog_reviews", "post_devlogs"
+  add_foreign_key "certification_ship_reviews", "projects"
+  add_foreign_key "certification_ship_reviews", "users", column: "reviewer_id"
   add_foreign_key "certification_ysws_reviews", "post_ship_events"
   add_foreign_key "certification_ysws_reviews", "post_ship_events", column: "ship_cert_id"
   add_foreign_key "certification_ysws_reviews", "projects"
@@ -1100,8 +1102,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_170653) do
   add_foreign_key "report_review_tokens", "project_reports", column: "report_id"
   add_foreign_key "rsvp_games", "rsvps"
   add_foreign_key "rsvp_replies", "rsvps"
-  add_foreign_key "ship_reviews", "projects"
-  add_foreign_key "ship_reviews", "users", column: "reviewer_id"
   add_foreign_key "shop_card_grants", "shop_items"
   add_foreign_key "shop_card_grants", "users"
   add_foreign_key "shop_item_attachments", "shop_items", column: "accessory_item_id", on_delete: :cascade

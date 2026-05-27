@@ -1,6 +1,6 @@
 # == Schema Information
 #
-# Table name: ship_reviews
+# Table name: certification_ship_reviews
 #
 #  id               :bigint           not null, primary key
 #  claim_expires_at :datetime
@@ -17,10 +17,10 @@
 #
 # Indexes
 #
-#  index_ship_reviews_on_decided_at                   (decided_at)
-#  index_ship_reviews_on_reviewer_id                  (reviewer_id)
-#  index_ship_reviews_on_status_and_claim_expires_at  (status,claim_expires_at)
-#  index_ship_reviews_unique_pending_project          (project_id) UNIQUE WHERE (status = 0)
+#  idx_on_status_claim_expires_at_c7a5e87a52        (status,claim_expires_at)
+#  index_certification_ship_reviews_on_decided_at   (decided_at)
+#  index_certification_ship_reviews_on_reviewer_id  (reviewer_id)
+#  index_ship_reviews_unique_pending_project        (project_id) UNIQUE WHERE (status = 0)
 #
 # Foreign Keys
 #
@@ -29,7 +29,7 @@
 #
 module Certification
   class Ship < ApplicationRecord
-    self.table_name = "ship_reviews"
+    self.table_name = "certification_ship_reviews"
 
     include Certification::Reviewable
 
