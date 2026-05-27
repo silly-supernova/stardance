@@ -86,7 +86,7 @@ class Project < ApplicationRecord
   has_many :git_commit_posts, -> { where(postable_type: "Post::GitCommit").order(created_at: :desc) }, class_name: "Post"
   has_many :votes, dependent: :destroy
   has_many :reports, class_name: "Project::Report", dependent: :destroy
-  has_many :ship_reviews, dependent: :restrict_with_exception
+  has_many :ship_reviews, class_name: "Certification::Ship", dependent: :restrict_with_exception
   has_many :skips, class_name: "Project::Skip", dependent: :destroy
   has_many :project_follows, dependent: :destroy
   has_many :followers, through: :project_follows, source: :user

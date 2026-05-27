@@ -84,5 +84,5 @@
 @use "pages/admin/_super_mega_dashboard";
 @use "pages/admin/missions" as admin_missions;
 @use "pages/admin/_voting_dashboard";
-@use "pages/certification/ship/index" as certification_ship_index;
-@use "pages/certification/ship/show" as certification_ship_show;
+@use "pages/certification/ships/index" as certification_ships_index;
+@use "pages/certification/ships/show" as certification_ships_show;
