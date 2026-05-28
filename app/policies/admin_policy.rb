@@ -11,20 +11,12 @@ class AdminPolicy < ApplicationPolicy
     user.admin?
   end
 
-  def manage_users?
-    user.admin? || user.fraud_dept?
-  end
-
   def manage_projects?
     user.admin? || user.fraud_dept?
   end
 
   def access_admin_endpoints?
     user.admin? || user.fraud_dept? || user.shop_manager? || user.helper?
-  end
-
-  def manage_user_roles?
-    user.admin? || user.super_admin?
   end
 
   def access_jobs?
@@ -57,14 +49,6 @@ class AdminPolicy < ApplicationPolicy
 
   def reject_shop_order?
     user.admin? || user.fraud_dept? || user.fulfillment_person?
-  end
-
-  def access_shop_orders?
-    user.admin? || user.fraud_dept?
-  end
-
-  def ban_users?
-    user.admin? || user.fraud_dept?
   end
 
   def access_reports?
