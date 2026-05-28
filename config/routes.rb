@@ -535,27 +535,23 @@ Rails.application.routes.draw do
     }
 
     resources :users, only: [ :index, :show, :update ] do
-       member do
-         post :promote_role
-         post :demote_role
-         post :toggle_flipper
-         post :sync_hackatime
-         post :mass_reject_orders
-         post :adjust_balance
-         post :ban
-         post :unban
-         post :cancel_all_hcb_grants
-         post :impersonate
-         post :refresh_verification
-         post :toggle_voting_lock
-         get  :votes
-         post :set_vote_balance
-         patch :set_ysws_eligible_override
-       end
-       collection do
-         post :stop_impersonating
-       end
-     end
+      scope module: :users do
+        resources :roles,               only: [ :create, :destroy ], param: :name
+        resource  :ban,                 only: [ :create, :destroy ]
+        resource  :impersonation,       only: [ :create ]
+        resources :feature_flags,       only: [ :create, :destroy ], param: :feature
+        resource  :hackatime_sync,      only: [ :create ]
+        resource  :order_rejection,     only: [ :create ]
+        resources :balance_adjustments, only: [ :create ]
+        resource  :grant_cancellation,  only: [ :create ]
+        resource  :verification,        only: [ :create ]
+        resource  :vote_balance,        only: [ :update ]
+        resource  :ysws_override,       only: [ :update ]
+        resources :votes,               only: [ :index ]
+      end
+    end
+
+    resource :impersonation, only: [ :destroy ], controller: "users/impersonations"
     resources :projects, only: [ :index, :show ] do
       member do
         post :restore
