@@ -427,11 +427,9 @@ class AdminConstraint
     return false unless user
 
     policy = AdminPolicy.new(user, :admin)
-    # Allow admins, fraud dept, fulfillment persons, and certification reviewers
+    # Allow admins, fraud dept, and fulfillment persons
     policy.access_admin_endpoints? ||
-      policy.access_fulfillment_view? ||
-      policy.access_ship_review? ||
-      policy.access_ysws_review?
+      policy.access_fulfillment_view?
   end
 
   def self.admin_user_for(request)
@@ -446,6 +444,26 @@ class AdminConstraint
   def self.allow?(request, permission)
     user = admin_user_for(request)
     user && AdminPolicy.new(user, :admin).public_send(permission)
+  end
+end
+
+class ShipCertificationConstraint
+  def self.matches?(request)
+    user = AdminConstraint.admin_user_for(request)
+    return false unless user
+
+    policy = AdminPolicy.new(user, :admin)
+    policy.access_ship_review?
+  end
+end
+
+class YswsReviewConstraint
+  def self.matches?(request)
+    user = AdminConstraint.admin_user_for(request)
+    return false unless user
+
+    policy = AdminPolicy.new(user, :admin)
+    policy.access_ysws_review?
   end
 end
 
@@ -705,8 +723,8 @@ Rails.application.routes.draw do
     end
   end
 
-  namespace :certification, path: "admin/certification", constraints: AdminConstraint do
-    resources :ships, path: "ship_cert", only: [ :index, :show, :update ] do
+  namespace :certification, path: "certification" do
+    resources :ships, only: [ :index, :show, :update ], constraints: ShipCertificationConstraint do
       collection do
         get :next
       end
@@ -715,11 +733,13 @@ Rails.application.routes.draw do
       end
     end
 
-    resources :devlog_reviews, only: [ :update ]
+    resources :ysws, only: [ :index, :show ], constraints: YswsReviewConstraint do
+      member do
+        post :report_fraud
+      end
+    end
 
-    get "review", to: "ysws#index", as: "ysws_reviews"
-    get "review/:id", to: "ysws#show", as: "ysws_review"
-    post "review/:id/report_fraud", to: "ysws#report_fraud", as: "ysws_report_fraud"
+    resources :devlog_reviews, only: [ :update ], constraints: YswsReviewConstraint
   end
 
   get "queue", to: "queue#index"
