@@ -75,7 +75,7 @@ class Projects::ShipsController < ApplicationController
       else
         @project.ship_reviews.create!(
           status: :returned,
-          feedback: "Automated URL check failed: #{probe_result.failures.join('; ')}. Fix and re-ship."
+          feedback: "Automated URL check failed: #{probe_result.failures.join('; ')}. Please make sure your links are online and public, then re-ship!"
         )
       end
     end
@@ -83,9 +83,9 @@ class Projects::ShipsController < ApplicationController
     if !reship
       redirect_to project_path(@project), notice: "Congratulations! Your project has been submitted for review!"
     elsif probe_result.ok?
-      redirect_to project_path(@project), notice: "Ship submitted! Your project is now out for voting."
+      redirect_to project_path(@project), notice: "Ship submitted! Your project is being voted on again!"
     else
-      redirect_to project_path(@project), notice: "Your project needs changes. We couldn't reach your demo or repo. Fix those and re-ship."
+      redirect_to project_path(@project), notice: "We couldn't reach your links. Make sure they're online, and public, then submit again!"
     end
   rescue ActiveRecord::RecordInvalid => e
     redirect_back fallback_location: new_project_ships_path(@project), alert: e.record.errors.full_messages.to_sentence
