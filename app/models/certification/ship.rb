@@ -91,7 +91,19 @@ module Certification
     def create_ysws_review_for_ship(ship_event)
       # Get the project owner who shipped the project
       owner = project.memberships.owner.first&.user
-      return unless owner
+
+      unless owner
+        Sentry.capture_message(
+          "Ship certification approved but no owner found to create YSWS review",
+          level: :error,
+          extra: {
+            ship_cert_id: id,
+            project_id: project.id,
+            ship_event_id: ship_event.id
+          }
+        )
+        return
+      end
 
       # Create YSWS review with all devlog reviews for this ship
       Certification::YswsReviewCreator.new(
