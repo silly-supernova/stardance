@@ -27,8 +27,11 @@
 #  regions                      :string           default([]), is an Array
 #  session_token                :string
 #  shop_region                  :enum
+#  shop_tutorial_completed_at   :datetime
+#  shop_tutorial_started_at     :datetime
 #  synced_at                    :datetime
 #  things_dismissed             :string           default([]), not null, is an Array
+#  verification_checked_at      :datetime
 #  verification_status          :string           default("needs_submission"), not null
 #  vote_balance                 :integer          default(0), not null
 #  votes_count                  :integer
@@ -147,8 +150,13 @@ class User < ApplicationRecord
 
   validates :display_name, presence: true
   validates :display_name, uniqueness: { case_sensitive: false }
-  validates :display_name, length: { maximum: MAX_DISPLAY_NAME_LENGTH }
-  validates :display_name, format: { with: USERNAME_FORMAT, message: "can only contain letters, numbers, hyphens, and underscores" }
+  # Length/format only apply when the name is actually being set or changed
+  # (onboarding name step, profile rename). Existing/HCA accounts can carry
+  # legacy names with spaces or other characters — enforcing the new format on
+  # every save would block them from logging in (user.save! in the HCA login
+  # flow would raise RecordInvalid → "Unable to save your account").
+  validates :display_name, length: { maximum: MAX_DISPLAY_NAME_LENGTH }, if: :display_name_changed?
+  validates :display_name, format: { with: USERNAME_FORMAT, message: "can only contain letters, numbers, hyphens, and underscores" }, if: :display_name_changed?
   validates :hcb_email, format: { with: URI::MailTo::EMAIL_REGEXP }, allow_blank: true
 
   include User::Notifications
@@ -157,6 +165,7 @@ class User < ApplicationRecord
   include User::Verification
   include User::HackatimeSync
   include User::ShopAccess
+  include User::ShopTutorial
   include User::Wallet
   include User::Moderation
   include User::Achievements
