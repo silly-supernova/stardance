@@ -24,6 +24,10 @@
         <time class="feed-post-card__time" datetime="<%= post.created_at.iso8601 %>" title="<%= l(post.created_at, format: :long) %>">
           · <%= time_ago_in_words(post.created_at) %>
         </time>
+
+        <% if show_idv_badge? %>
+          <%= render IdvBadgeComponent.new(user: current_user, context: devlog? ? :devlog : :post) %>
+        <% end %>
       </p>
 
       <% if devlog? && postable.respond_to?(:duration_seconds) && postable.duration_seconds.present? %>
@@ -65,13 +69,13 @@
       <%= link_to project.present? ? project_path(project, anchor: dom_id(post)) : "#",
             class: "feed-post-card__action",
             aria: { label: "#{postable.comments_count} comments" } do %>
-        <%= inline_svg_tag "icons/paper.svg", class: "feed-post-card__action-icon" %>
+        <%= inline_svg_tag "icons/comment.svg", class: "feed-post-card__action-icon" %>
         <span id="<%= comments_count_id %>"><%= postable.comments_count %></span>
       <% end %>
     <% end %>
 
     <span class="feed-post-card__action feed-post-card__action--disabled" aria-label="Reposts are not available yet">
-      <%= inline_svg_tag "icons/refresh.svg", class: "feed-post-card__action-icon" %>
+      <%= inline_svg_tag "icons/repost.svg", class: "feed-post-card__action-icon" %>
       <span>0</span>
     </span>
 

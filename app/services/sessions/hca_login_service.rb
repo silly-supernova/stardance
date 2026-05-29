@@ -25,7 +25,11 @@ module Sessions
       return fail_result(:invalid_verification, "Your Hack Club account is broken. Please contact support.") unless User.verification_statuses.key?(fields[:verification_status])
 
       identity = User::Identity.find_or_initialize_by(provider: "hack_club", uid: fields[:uid])
-      user = identity.user || User.find_by(slack_id: fields[:slack_id]) || guest_to_upgrade || User.new
+      user = identity.user ||
+             User.find_by(slack_id: fields[:slack_id]) ||
+             existing_user_by_email(fields[:email]) ||
+             guest_to_upgrade ||
+             User.new
 
       guest_collision = guest_to_upgrade.present? && user.persisted? && user.id != guest_to_upgrade.id
 
@@ -42,6 +46,7 @@ module Sessions
           user_id: user.id, user_errors: user.errors.full_messages,
           slack_id: fields[:slack_id], uid: fields[:uid], is_new_user: is_new_user
         })
+        Rails.logger.warn("HCA login user save failed: #{user.errors.full_messages.to_sentence}")
         return fail_result(:user_save_failed, "Unable to save your account. Please contact support.")
       end
 
@@ -116,7 +121,7 @@ module Sessions
 
     def extract_identity_fields(data)
       {
-        email:               data["primary_email"].presence.to_s,
+        email:               data["primary_email"].to_s.strip.downcase,
         first_name:          data["first_name"].to_s.strip,
         last_name:           data["last_name"].to_s.strip,
         verification_status: data["verification_status"].to_s,
@@ -124,6 +129,12 @@ module Sessions
         slack_id:            data["slack_id"].to_s,
         uid:                 data["id"].to_s
       }
+    end
+
+    def existing_user_by_email(email)
+      return nil if email.blank?
+
+      User.where("LOWER(email) = ?", email.downcase).first
     end
 
     def resolve_uid_change(identity, user, slack_id, uid)
