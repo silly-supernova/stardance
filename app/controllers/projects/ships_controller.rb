@@ -67,15 +67,12 @@ class Projects::ShipsController < ApplicationController
       # First Ship: Always create ship certification for manual review    ----------- Ask @AVD if you want to change this! - May need to notify teams of any changes!
       # Reships: If links alive - approves project, create a 'reship' YSWS review, if links dead - Creates ship cert for manual review
       if !reship
-        # First ship: create ship certification for manual review
         @project.ship_reviews.create!(status: :pending)
       elsif probe_result.ok?
-        # Reship with passing URLs: approve and create YSWS review
         @project.approve! if @project.may_approve?
         @post.postable.update!(certification_status: "approved")
         maybe_create_ysws_review(ship_event)
       else
-        # Reship with failing URLs: create ship cert for manual review, no YSWS
         @project.ship_reviews.create!(
           status: :returned,
           feedback: "Automated URL check failed: #{probe_result.failures.join('; ')}. Fix and re-ship."
@@ -155,10 +152,8 @@ class Projects::ShipsController < ApplicationController
         .exists?
     end
 
-    def maybe_create_ysws_review(ship_event)
-      # Only create review if this is NOT the first ship (i.e., there are previous approved ships)
+    def maybe_create_ysws_review(ship_event) # Only create review if this is NOT the first ship (i.e., there are previous approved ships)
       return unless has_previous_approved_ships?(excluding_ship_event: ship_event) # excl: as ship event created before
-
       Certification::YswsReviewCreator.new(
         ship_event: ship_event,
         user: current_user,
