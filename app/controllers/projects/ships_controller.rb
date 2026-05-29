@@ -153,7 +153,6 @@ class Projects::ShipsController < ApplicationController
     end
 
     def maybe_create_ysws_review(ship_event) # Only create review if this is NOT the first ship (i.e., there are previous approved ships)
-      return unless has_previous_approved_ships?(excluding_ship_event: ship_event) # excl: as ship event created before
       Certification::YswsReviewCreator.new(
         ship_event: ship_event,
         user: current_user,
