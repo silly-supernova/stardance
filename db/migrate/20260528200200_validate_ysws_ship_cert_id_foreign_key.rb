@@ -6,7 +6,5 @@ class ValidateYswsShipCertIdForeignKey < ActiveRecord::Migration[7.2]
   end
 
   def down
-    # No-op: validation is a one-way operation
-    # If we need to roll back, we'd remove the FK in the previous migration's rollback
   end
 end

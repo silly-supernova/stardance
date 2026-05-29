@@ -85,7 +85,7 @@ class Projects::ShipsController < ApplicationController
     elsif probe_result.ok?
       redirect_to project_path(@project), notice: "Ship submitted! Your project is being voted on again!"
     else
-      redirect_to project_path(@project), notice: "We couldn't reach your links. Make sure they're online, and public, then submit again!"
+      redirect_to project_path(@project), notice: "We couldn't reach your links. Make sure they're online and public, then submit again!"
     end
   rescue ActiveRecord::RecordInvalid => e
     redirect_back fallback_location: new_project_ships_path(@project), alert: e.record.errors.full_messages.to_sentence

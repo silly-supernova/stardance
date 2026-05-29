@@ -11,15 +11,9 @@ class AddYswsShipCertIdForeignKeyToCertificationShip < ActiveRecord::Migration[7
     # Add the foreign key without validation to avoid locking
     # Will be validated in the next migration
     add_foreign_key :certification_ysws_reviews, :certification_ship_reviews, column: :ship_cert_id, validate: false
-
-    # Note: Future YSWS reviews created via the callback will have the correct ship_cert_id
   end
 
   def down
-    # Remove the new foreign key constraint
     remove_foreign_key :certification_ysws_reviews, :certification_ship_reviews
-
-    # Note: We don't restore the old ship_cert_id values because they were incorrect
-    # They would need to be manually backfilled if needed
   end
 end
