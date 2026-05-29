@@ -297,7 +297,8 @@ turbo-frame#project_hero {
 .project-show__control--incomplete,
 .project-show__description-input--incomplete {
   border-color: var(--color-brand-salmon);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-brand-salmon) 45%, transparent);
+  box-shadow: 0 0 0 2px
+    color-mix(in srgb, var(--color-brand-salmon) 45%, transparent);
 }
 
 .project-show__control--select {
@@ -707,11 +708,7 @@ turbo-frame#project_hero {
     var(--color-brand-yellow) 14%,
     var(--color-set-2-bg)
   );
-  border-color: color-mix(
-    in srgb,
-    var(--color-brand-yellow) 55%,
-    transparent
-  );
+  border-color: color-mix(in srgb, var(--color-brand-yellow) 55%, transparent);
   color: var(--color-brand-yellow);
 
   &:hover:not(:disabled),
