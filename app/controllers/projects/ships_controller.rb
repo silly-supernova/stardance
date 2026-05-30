@@ -49,7 +49,7 @@ class Projects::ShipsController < ApplicationController
     session.delete(:ship_wizard)
 
     unless @project.readme_is_raw_github_url?
-      flash.now[:warning] = "Your README link doesn't appear to be a raw GitHub URL. We require raw README files (from raw.githubusercontent.com) for proper display and consistency. Please update your README URL."
+      flash.now[:warning] = "Your README link doesn't appear to be a raw GitHub URL. Are you sure you're using another Git Hosting provider?"
     end
 
     reship = has_previous_approved_ships?
