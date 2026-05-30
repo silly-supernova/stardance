@@ -758,8 +758,11 @@ Rails.application.routes.draw do
 
   get "edu", to: "landing#edu", as: :edu
 
-  # Guides
-  resources :guides, only: [ :index, :show ]
+  # Resources (née Guides)
+  get "resources",     to: "guides#index", as: :resources
+  get "resources/:id", to: "guides#show",  as: :resource
+  get "guides",        to: redirect("/resources")
+  get "guides/:id",    to: redirect("/resources/%{id}")
 
   # Missions (public listing + show page).
   # Project-side / reviewer-queue / admin-managed missions surfaces ship in later PRs.

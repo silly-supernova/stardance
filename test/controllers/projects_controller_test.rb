@@ -61,7 +61,7 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select ".project-show__onboarding"
     assert_select "#project-show-onboarding-title", text: "Welcome to your new project!"
-    assert_select "a[href='#{guide_path(:github_repository)}']", text: /Create your GitHub repository/
+    assert_select "a[href='#{resource_path(:github_repository)}']", text: /Create your GitHub repository/
   end
 
   test "owner without hackatime identity sees hackatime setup card" do

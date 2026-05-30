@@ -18,7 +18,7 @@
 
         <div class="guides-index__grid">
           <% guides.each do |guide| %>
-            <%= link_to guide_path(guide.slug), class: "guide-card" do %>
+            <%= link_to resource_path(guide.slug), class: "guide-card" do %>
               <div class="guide-card__icon" aria-hidden="true">
                 <%= inline_svg_tag "icons/#{guide.icon}.svg" %>
               </div>
