@@ -65,10 +65,6 @@ class Projects::ShipsController < ApplicationController
       redirect_to project_path(@project), alert: "Finish the remaining requirements before shipping."
     end
 
-    def had_prior_ship_event?
-      @project.posts.where(postable_type: "Post::ShipEvent").exists?
-    end
-
     def mission_submission_guide_ack_required?
       mission = @project.current_mission
       return false if mission.nil? || @project.shipped_to_mission?(mission)
