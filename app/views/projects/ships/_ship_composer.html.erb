@@ -5,14 +5,35 @@
     the live enable-as-you-type behavior reach the button. %>
 <div data-controller="composer emoji-picker"
      data-composer-simple-mode-value="true">
+  <% mission = @project.current_mission %>
+  <% if mission && !@project.shipped_to_mission?(mission) %>
+    <%# Rendered above the composer; its fields associate with the ship form
+        via the HTML form="ship-form" attribute since they live outside it. %>
+    <div class="ship__mission">
+      <p class="ship__mission-heading">
+        Shipping to <strong class="ship__mission-name"><%= mission.name %></strong>
+      </p>
+      <%= hidden_field_tag :mission_payout_path, "static_prize", form: "ship-form" %>
+
+      <% if mission.submission_guide.present? %>
+        <div class="ship__mission-guide">
+          <h2 class="ship__mission-guide-title">Mission requirements</h2>
+          <div class="ship__mission-guide-body">
+            <%= render MarkdownContentComponent.new(markdown: mission.submission_guide, flavor: :guide) %>
+          </div>
+          <label class="ship__mission-ack">
+            <%= check_box_tag :mission_submission_guide_acknowledged, "1", false, required: true, form: "ship-form" %>
+            <span>I've read the mission requirements for <strong><%= mission.name %></strong>.</span>
+          </label>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+
   <section class="feed-composer"
            aria-label="Ship your project"
            data-composer-target="dropZone"
            data-action="drop->composer#drop dragover->composer#dragover dragleave->composer#dragleave">
-
-    <div class="feed-composer__chips">
-      <span class="feed-composer__chip feed-composer__chip--active"><%= @project.title %></span>
-    </div>
 
     <%= form_with(
           url: project_ships_path(@project),
@@ -61,7 +82,7 @@
   </section>
 
   <div class="ship__actions">
-    <%= link_to "← Back", review_project_ships_path(@project), class: "ship__back-link" %>
+    <%= link_to "← Back", new_project_ships_path(@project), class: "ship__back-link" %>
     <%= render SpecialActionButtonComponent.new(
           text: "Ship and post",
           type: :submit,

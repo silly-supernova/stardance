@@ -1,7 +1,7 @@
 <article id="<%= dom_id(post) %>" class="<%= card_classes %>">
   <header class="feed-post-card__header">
     <% if author.present? %>
-      <%= link_to user_path(author), class: "feed-post-card__avatar-link", aria: { label: "@#{author_name}" } do %>
+      <%= link_to profile_path(author.display_name), class: "feed-post-card__avatar-link", aria: { label: "@#{author_name}" } do %>
         <%= image_tag author.avatar, alt: "", class: "feed-post-card__avatar" %>
       <% end %>
     <% else %>
@@ -11,7 +11,7 @@
     <div class="feed-post-card__meta">
       <p class="feed-post-card__byline">
         <% if author.present? %>
-          <%= link_to "@#{author_name}", user_path(author), class: "feed-post-card__author" %>
+          <%= link_to "@#{author_name}", profile_path(author.display_name), class: "feed-post-card__author" %>
         <% else %>
           <span class="feed-post-card__author">@stardancer</span>
         <% end %>
@@ -38,7 +38,7 @@
 
   <% if body.present? %>
     <div class="feed-post-card__body">
-      <%= helpers.md(body) %>
+      <%= helpers.md(body, allow_images: false) %>
     </div>
   <% end %>
 

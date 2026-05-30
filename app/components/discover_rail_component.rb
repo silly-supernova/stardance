@@ -23,7 +23,11 @@ class DiscoverRailComponent < ViewComponent::Base
   private
 
   def build_widget(slug)
-    klass = DiscoverRail::BaseWidget.registry[slug.to_sym]
+    # Prefer the register_as registry, but fall back to the conventional class
+    # name so widgets resolve even when eager loading is off (dev) and the
+    # class hasn't been autoloaded yet — constantizing triggers the load.
+    klass = DiscoverRail::BaseWidget.registry[slug.to_sym] ||
+            "DiscoverRail::#{slug.to_s.camelize}Widget".safe_constantize
     klass&.new(user: user, context: context)
   end
 

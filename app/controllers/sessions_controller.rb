@@ -18,7 +18,7 @@ class SessionsController < ApplicationController
     session[:user_id] = result.user.id
 
     return_to = safe_return_to(session.delete(:return_to))
-    redirect_to(return_to || (result.user.setup_complete? ? projects_user_path(result.user) : home_path), notice: "Signed in with Hack Club")
+    redirect_to(return_to || (result.user.setup_complete? ? profile_projects_path(result.user.display_name) : home_path), notice: "Signed in with Hack Club")
   end
 
   def destroy

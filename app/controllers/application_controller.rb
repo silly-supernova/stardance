@@ -259,6 +259,13 @@ class ApplicationController < ActionController::Base
     return if identity_payload.blank?
 
     current_user.apply_hca_verification_payload!(identity_payload)
+    current_user.reload
+
+    if current_user.identity_verified?
+      redirect_to profile_path(current_user.display_name), notice: "You're verified — your work is now public!" and return
+    else
+      redirect_to profile_path(current_user.display_name, idv_check: 1) and return
+    end
   rescue StandardError => e
     Rails.logger.warn("Portal return identity refresh failed: #{e.class}: #{e.message}")
   end

@@ -46,6 +46,13 @@ turbo-frame#project_hero {
   background: var(--color-space-surface-soft);
 }
 
+// Red "still to complete" highlight for the banner — drawn inside the rounded
+// corners so it isn't clipped by `overflow: hidden`.
+.project-show__banner--incomplete {
+  outline: 2px solid var(--color-brand-salmon);
+  outline-offset: -2px;
+}
+
 .project-show__banner-image {
   display: block;
   width: 100%;
@@ -282,6 +289,16 @@ turbo-frame#project_hero {
 .project-show__textarea {
   min-height: 86px;
   resize: vertical;
+}
+
+// Red "still to complete" highlight applied (via the project-form controller)
+// to sections the user hasn't filled in yet. The salmon ring stays visible
+// even while the field is focused.
+.project-show__control--incomplete,
+.project-show__description-input--incomplete {
+  border-color: var(--color-brand-salmon);
+  box-shadow: 0 0 0 2px
+    color-mix(in srgb, var(--color-brand-salmon) 45%, transparent);
 }
 
 .project-show__control--select {
@@ -674,27 +691,30 @@ turbo-frame#project_hero {
     height: 1.6em;
     margin-top: -0.15em;
   }
+}
 
-  // Yellow test variant applied via class: "project-show__action--test" on the
-  // "Add 15min (test)" ActionButton. Lives here because it's only used in this row.
-  .project-show__action--test {
-    background: color-mix(
-      in srgb,
-      var(--color-brand-yellow) 14%,
-      var(--color-set-2-bg)
-    );
-    border-color: color-mix(
-      in srgb,
-      var(--color-brand-yellow) 55%,
-      transparent
-    );
-    color: var(--color-brand-yellow);
+// "Add 15min (test)" button. Pulled out of the actions row and pinned to the
+// bottom-right corner of the viewport so it stays out of the main flow.
+.project-show__test-time-form {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 50;
+}
 
-    &:hover:not(:disabled),
-    &:focus-visible:not(:disabled) {
-      border-color: var(--color-brand-yellow);
-      color: var(--color-brand-cream);
-    }
+.project-show__test-time {
+  background: color-mix(
+    in srgb,
+    var(--color-brand-yellow) 14%,
+    var(--color-set-2-bg)
+  );
+  border-color: color-mix(in srgb, var(--color-brand-yellow) 55%, transparent);
+  color: var(--color-brand-yellow);
+
+  &:hover:not(:disabled),
+  &:focus-visible:not(:disabled) {
+    border-color: var(--color-brand-yellow);
+    color: var(--color-brand-cream);
   }
 }
 
@@ -1079,15 +1099,30 @@ turbo-frame#project_hero {
 
 // Payout votes panel — same set-1 surface as the notice.
 .project-show__payout-votes {
-  padding: 24px;
-  border-radius: var(--profile-radius);
-  background: var(--color-set-1-bg);
-  box-shadow: 0 0 0 2px var(--color-space-border);
+  // Match the mission module's tile (.mission-panel).
+  padding: var(--space-m);
+  border-radius: 14px;
+  border: 1px solid var(--color-space-border, rgba(255, 255, 255, 0.12));
+  background: var(--color-space-card, rgba(255, 255, 255, 0.04));
   color: var(--color-space-text);
 }
 
+.project-show__payout-votes-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-m);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-s);
+}
+
+.project-show__payout-votes-cta {
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+
 .project-show__payout-votes-title {
-  margin: 0 0 var(--space-xs);
+  margin: 0;
   // Branding §2.1 Body size, bold.
   font-size: 1.1875rem;
   font-weight: 700;
@@ -1350,6 +1385,170 @@ turbo-frame#project_hero {
       filter: brightness(1.05);
       outline: none;
     }
+  }
+}
+
+// Ship flow modals (refresher video + ship post) launched from the
+// "Ship your project!" button, replacing the old multi-page wizard.
+.ship-modal {
+  border: none;
+  padding: 0;
+  background: transparent;
+  max-width: min(560px, 94vw);
+  width: 100%;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+  margin: 0;
+  color: var(--color-space-text);
+
+  &::backdrop {
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(2px);
+  }
+}
+
+// The ship-post step previews a full ship card, so give it more room.
+.ship-modal--post {
+  max-width: min(720px, 94vw);
+}
+
+.ship-modal__panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-m);
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: var(--space-l);
+  background: var(--color-space-bg-2, #0d0b2e);
+  border: 1px solid var(--color-space-border);
+  border-radius: var(--border-radius);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+}
+
+.ship-modal__title {
+  margin: 0;
+  font-family: "Playfair Display", serif;
+  font-style: italic;
+  font-size: var(--font-size-xxl);
+  font-weight: 700;
+}
+
+.ship-modal__subtitle {
+  margin: 0;
+  font-size: var(--font-size-base);
+  color: var(--color-space-text-muted);
+}
+
+.ship-modal__video {
+  border-radius: var(--border-radius);
+  overflow: hidden;
+}
+
+.ship-modal__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-m);
+}
+
+.ship-modal__mission {
+  padding: var(--space-m) var(--space-l);
+  background: var(--color-set-2-bg);
+  border-radius: var(--border-radius);
+}
+
+.ship-modal__mission-heading {
+  margin: 0;
+  font-size: var(--font-body);
+}
+
+// The mission's submission guidelines, shown above the acknowledgment.
+.ship-modal__mission-guide {
+  max-height: 240px;
+  overflow-y: auto;
+  margin-top: var(--space-s);
+  padding-right: var(--space-xs);
+  font-size: var(--font-size-s);
+  line-height: 1.5;
+  color: var(--color-space-text-muted);
+}
+
+.ship-modal__mission-ack {
+  display: flex;
+  gap: var(--space-xs);
+  align-items: flex-start;
+  margin-top: var(--space-s);
+  font-size: var(--font-body);
+  cursor: pointer;
+}
+
+// Editable body inside the ship-card preview — matches the card's other text.
+.ship-modal__textarea {
+  width: 100%;
+  min-height: 96px;
+  padding: 8px 12px;
+  border: 2px solid var(--color-border-input);
+  border-radius: var(--profile-radius);
+  background: transparent;
+  color: var(--color-space-text);
+  font: inherit;
+  font-size: 1.1875rem;
+  line-height: 1.3;
+  resize: vertical;
+  outline: none;
+
+  &::placeholder {
+    color: hsla(0, 0%, 100%, 0.5);
+  }
+
+  &:focus {
+    border-color: var(--color-border-input-focus);
+  }
+}
+
+.ship-modal__actions {
+  display: flex;
+  gap: var(--space-s);
+  justify-content: flex-end;
+}
+
+.ship-modal__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 18px;
+  border-radius: 999px;
+  border: 2px solid var(--color-set-3-bg);
+  background: var(--color-set-2-bg);
+  color: var(--color-space-text);
+  font-family: inherit;
+  font-size: var(--font-size-base);
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
+
+  &--secondary:hover,
+  &--secondary:focus-visible {
+    border-color: var(--color-brand-highlight-secondary);
+    color: var(--color-brand-highlight-secondary);
+    outline: none;
+  }
+
+  &--primary {
+    background: var(--color-brand-highlight);
+    border-color: var(--color-brand-highlight);
+    color: var(--color-set-1-bg);
+  }
+
+  &--primary:hover,
+  &--primary:focus-visible {
+    filter: brightness(1.05);
+    outline: none;
   }
 }
 

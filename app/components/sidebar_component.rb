@@ -41,8 +41,8 @@ class SidebarComponent < ViewComponent::Base
         notify: user.shop_tutorial_needed? },
       { slug: "resources",     label: "resources",     path: helpers.guides_path,
         icon: { idle: "book", active: "book_active" } },
-      { slug: "projects",      label: "my projects",   path: helpers.projects_user_path(user),
-        icon: :avatar, active_prefix: "/users/" }
+      { slug: "projects",      label: "my projects",   path: helpers.profile_projects_path(user.display_name),
+        icon: :avatar, active_prefix: "/@" }
     ]
 
     # items << { slug: "support", label: "support", path: helpers.admin_support_path, icon: "help" } if helpers.admin_policy(:support_dashboard).show?

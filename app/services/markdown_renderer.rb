@@ -6,7 +6,7 @@ class MarkdownRenderer
 
   # Bump on any rendered-output change (sanitizer, shortcodes, Rouge, link
   # hardening) — the cache key uses it to invalidate deployment-wide.
-  RENDERER_VERSION      = "v2".freeze
+  RENDERER_VERSION      = "v3".freeze
   CACHE_NAMESPACE       = "markdown".freeze
   GUIDE_CACHE_NAMESPACE = "guide-markdown".freeze
   CACHE_EXPIRES_IN      = 7.days
@@ -31,17 +31,22 @@ class MarkdownRenderer
     end
   end
 
-  def self.render(text)
+  def self.render(text, allow_images: true)
     return "".freeze if text.blank?
 
-    Rails.cache.fetch([ CACHE_NAMESPACE, RENDERER_VERSION, Digest::SHA1.hexdigest(text) ],
+    Rails.cache.fetch([ CACHE_NAMESPACE, RENDERER_VERSION, "images-#{allow_images}", Digest::SHA1.hexdigest(text) ],
                       expires_in: CACHE_EXPIRES_IN) do
       raw = get_markdown(text)
       sanitised = sanitize_html(raw, extra_tags: %w[u], extra_attributes: %w[target rel])
       doc = Nokogiri::HTML::DocumentFragment.parse(sanitised)
+      remove_images(doc) unless allow_images
       harden_links_and_images(doc)
       doc.to_html.freeze
     end
+  end
+
+  def self.remove_images(doc)
+    doc.css("img").remove
   end
 
   def self.harden_links_and_images(doc)

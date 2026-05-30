@@ -29,7 +29,7 @@
               <span class="project-setup-missions__card-body">
                 <span class="project-setup-missions__card-title"><%= mission.name %></span>
                 <span class="project-setup-missions__card-description"><%= truncate(mission.description.to_s, length: 110) %></span>
-                <% if mission.difficulty.present? || mission.steps_count > 0 %>
+                <% if mission.difficulty.present? || mission.steps_count > 0 || mission.estimated_completion_label.present? %>
                   <span class="project-setup-missions__card-meta">
                     <% if mission.difficulty.present? %>
                       <span class="project-setup-missions__card-difficulty"><%= mission.difficulty %></span>
@@ -37,7 +37,13 @@
                     <% if mission.steps_count > 0 %>
                       <span class="project-setup-missions__card-steps"><%= mission.steps_count %>-step guide</span>
                     <% end %>
+                    <% if mission.estimated_completion_label.present? %>
+                      <span class="project-setup-missions__card-duration"><%= mission.estimated_completion_label %></span>
+                    <% end %>
                   </span>
+                <% end %>
+                <% if mission.has_prizes? %>
+                  <span class="project-setup-missions__card-prize">Prize available</span>
                 <% end %>
               </span>
             </button>
@@ -45,7 +51,10 @@
         <% end %>
       </div>
     <% else %>
-      <p class="project-setup-missions__empty">Woah there explorer! Looks like you've already seen the whole universe (no more missions are available).</p>
+      <div class="project-setup-missions__empty">
+        <span class="project-setup-missions__empty-icon" aria-hidden="true">✦</span>
+        <p class="project-setup-missions__empty-text">You've explored the whole universe! No more missions are available right now.</p>
+      </div>
     <% end %>
 
     <%= form_with url: projects_setup_submit_mission_path, method: :post,

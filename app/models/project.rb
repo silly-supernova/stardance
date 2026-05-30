@@ -104,6 +104,14 @@ class Project < ApplicationRecord
     current_mission_attachment&.mission
   end
 
+  # True once this project has shipped to the given mission at least once.
+  # After that first ship the mission stays attached (for display) but future
+  # ships are regular, non-mission ships.
+  def shipped_to_mission?(mission)
+    return false if mission.nil?
+    mission_submissions.where(mission_id: mission.id).exists?
+  end
+
   # needs to be implemented
   has_one_attached :demo_video
 
@@ -253,7 +261,23 @@ class Project < ApplicationRecord
     end
   end
 
+  # Maps each editable info field on the project form to the shipping
+  # requirement keys it satisfies. Mirrors FIELD_REQUIREMENT_MAP in the
+  # project-form Stimulus controller. The union of these keys is what
+  # distinguishes "project info" from gates like devlog / payout / vote balance.
+  FIELD_REQUIREMENT_MAP = {
+    description: %i[description],
+    demo_url: %i[demo_url demo_url_reachable],
+    repo_url: %i[repo_url repo_url_format repo_cloneable],
+    readme_url: %i[readme_url readme_url_reachable],
+    banner: %i[banner]
+  }.freeze
+
+  INFO_REQUIREMENT_KEYS = FIELD_REQUIREMENT_MAP.values.flatten.freeze
+
   def shipping_requirements
+    owner_vote_balance = memberships.owner.first&.user&.vote_balance.to_i
+    votes_needed = [ -owner_vote_balance, 0 ].max
     [
       {
         key: :demo_url,
@@ -325,9 +349,9 @@ class Project < ApplicationRecord
       {
         key: :vote_balance,
         label: "Maintain a non-negative vote balance",
-        fail_label: "Your vote balance is negative! Vote on other projects before shipping this one.",
+        fail_label: "Vote at least #{votes_needed} #{'time'.pluralize(votes_needed)} before shipping!",
         tooltip: "Your vote balance has gone negative from downvotes. Earn it back by getting upvotes on your projects.",
-        passed: memberships.owner.first&.user&.vote_balance.to_i >= 0
+        passed: owner_vote_balance >= 0
       },
       {
         key: :idv,
@@ -335,6 +359,13 @@ class Project < ApplicationRecord
         fail_label: "Verify your identity before shipping",
         tooltip: "Stardance needs to verify your identity through Hack Club Auth before you can ship — it keeps the program safe and is how we know where to send prizes.",
         passed: memberships.owner.first&.user&.identity_verified?
+      },
+      {
+        key: :ysws_eligible,
+        label: "You're eligible for YSWS prizes",
+        fail_label: "You're not eligible for YSWS prizes yet — check the Hack Club portal",
+        tooltip: "Your identity is verified, but YSWS eligibility is still pending. Open the Hack Club portal for details.",
+        passed: memberships.owner.first&.user&.ysws_eligible?
       },
       {
         key: :shop_tutorial,
@@ -372,6 +403,29 @@ class Project < ApplicationRecord
   def shippable? = ship_blocking_errors.empty?
 
   def ship_blocking_errors = shipping_requirements.reject { |r| r[:passed] }.map { |r| r[:label] }
+
+  # The single most relevant reason the project can't ship yet, as a short
+  # actionable message — used for the ship button's disabled tooltip. Returns
+  # nil when the project is shippable.
+  def ship_blocker_message
+    req = shipping_requirements.find { |r| !r[:passed] }
+    req && (req[:fail_label] || req[:label])
+  end
+
+  # Whether every project-info requirement (see INFO_REQUIREMENT_KEYS) passes,
+  # i.e. the editable details are filled in and ship-ready.
+  def info_complete?
+    shipping_requirements
+      .select { |r| INFO_REQUIREMENT_KEYS.include?(r[:key]) }
+      .all? { |r| r[:passed] }
+  end
+
+  # The editable info fields (see FIELD_REQUIREMENT_MAP) that still have an
+  # unmet requirement — used to highlight what's left to fill in on the form.
+  def incomplete_info_fields
+    unmet = shipping_requirements.reject { |r| r[:passed] }.map { |r| r[:key] }
+    FIELD_REQUIREMENT_MAP.select { |_field, keys| (keys & unmet).any? }.keys
+  end
 
   def last_ship_event
     ship_events.first
@@ -436,17 +490,8 @@ class Project < ApplicationRecord
     last_ship_at.present? && last_ship_at > last_devlog_at
   end
 
-  private
-
-  def previous_ship_event_has_payout?
-    return true if last_ship_event.nil?
-    last_ship_event.payout.present?
-  end
-
-  def notify_slack_channel
-    PostCreationToSlackJob.perform_later(self)
-  end
-
+  # Public so ProjectUrlProbeService can probe demo/repo URLs on re-ship. The
+  # HTTP helpers it leans on stay private below.
   def url_reachable?(url)
     cache_key = "url_reachable_#{Digest::MD5.hexdigest(url)}"
     Rails.cache.fetch(cache_key, expires_in: 5.minutes) do
@@ -458,6 +503,17 @@ class Project < ApplicationRecord
   rescue URI::InvalidURIError, SocketError, Errno::ECONNREFUSED, Errno::EHOSTUNREACH,
          Net::OpenTimeout, Net::ReadTimeout, OpenSSL::SSL::SSLError
     false
+  end
+
+  private
+
+  def previous_ship_event_has_payout?
+    return true if last_ship_event.nil?
+    last_ship_event.payout.present?
+  end
+
+  def notify_slack_channel
+    PostCreationToSlackJob.perform_later(self)
   end
 
   def head_with_redirects(uri, limit = 3)

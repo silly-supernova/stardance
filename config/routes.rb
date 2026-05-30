@@ -208,10 +208,7 @@
 #                                            DELETE /projects/:project_id/devlogs/:id(.:format)                                                       projects/devlogs#destroy
 #                            project_reports POST   /projects/:project_id/reports(.:format)                                                           projects/reports#create
 #                           project_og_image GET    /projects/:project_id/og_image(.:format)                                                          projects/og_images#show {format: :png}
-#                         info_project_ships GET    /projects/:project_id/ships/info(.:format)                                                        projects/ships#info
-#                       review_project_ships GET    /projects/:project_id/ships/review(.:format)                                                      projects/ships#review_step
 #                      compose_project_ships GET    /projects/:project_id/ships/compose(.:format)                                                     projects/ships#compose
-#                       project_ships_review POST   /projects/:project_id/ships/review(.:format)                                                      projects/ships/reviews#create
 #                          new_project_ships GET    /projects/:project_id/ships/new(.:format)                                                         projects/ships#new
 #                              project_ships POST   /projects/:project_id/ships(.:format)                                                             projects/ships#create
 #                            project_mission DELETE /projects/:project_id/mission(.:format)                                                           projects/missions#destroy
@@ -245,6 +242,12 @@
 #                                       user GET    /users/:id(.:format)                                                                              users#show
 #                                            PATCH  /users/:id(.:format)                                                                              users#update
 #                                            PUT    /users/:id(.:format)                                                                              users#update
+#                                    profile GET    /@:username(.:format)                                                                             users#show {username: /[a-zA-Z0-9_-]+/}
+#                            profile_devlogs GET    /@:username/devlogs(.:format)                                                                     users#show {tab: "devlogs", username: /[a-zA-Z0-9_-]+/}
+#                            profile_replies GET    /@:username/replies(.:format)                                                                     users#show {tab: "replies", username: /[a-zA-Z0-9_-]+/}
+#                           profile_projects GET    /@:username/projects(.:format)                                                                    users#show {tab: "projects", username: /[a-zA-Z0-9_-]+/}
+#                          profile_followers GET    /@:username/followers(.:format)                                                                   users#followers {username: /[a-zA-Z0-9_-]+/}
+#                          profile_following GET    /@:username/following(.:format)                                                                   users#following {username: /[a-zA-Z0-9_-]+/}
 #                      username_availability GET    /username_availability(.:format)                                                                  users/username_availabilities#show
 #                               search_users GET    /search/users(.:format)                                                                           search#users
 #                            search_projects GET    /search/projects(.:format)                                                                        search#projects
@@ -705,15 +708,8 @@ Rails.application.routes.draw do
     resource :ships, only: [ :new, :create ], module: :projects do
       # Wizard steps, one route per page (rather than ?step=N query param):
       #   new      → refresher
-      #   info     → project info form
-      #   review   → review-instructions form (GET only — POST goes to the
-      #              nested :review resource below, which persists the value
-      #              into the session wizard and redirects to compose)
-      #   compose  → final ship composer
-      get :info,    on: :member
-      get :review,  on: :member, action: :review_step
+      #   compose  → ship post page (mission requirements + ship composer)
       get :compose, on: :member
-      resource :review, only: [ :create ], module: :ships
     end
     resource :mission, only: [ :create, :destroy ], module: :projects, controller: "missions"
     resource :magic, only: [ :create, :destroy ], module: :projects, controller: "magic"
@@ -746,6 +742,13 @@ Rails.application.routes.draw do
       get :following
     end
   end
+  username_constraint = /[a-zA-Z0-9_-]+/
+  get "/@:username",           to: "users#show",      as: :profile,           constraints: { username: username_constraint }
+  get "/@:username/devlogs",   to: "users#show",      as: :profile_devlogs,   defaults: { tab: "devlogs" },   constraints: { username: username_constraint }
+  get "/@:username/replies",   to: "users#show",      as: :profile_replies,   defaults: { tab: "replies" },   constraints: { username: username_constraint }
+  get "/@:username/projects",  to: "users#show",      as: :profile_projects,  defaults: { tab: "projects" },  constraints: { username: username_constraint }
+  get "/@:username/followers", to: "users#followers", as: :profile_followers, constraints: { username: username_constraint }
+  get "/@:username/following", to: "users#following", as: :profile_following, constraints: { username: username_constraint }
 
   resource :username_availability, only: [ :show ], controller: "users/username_availabilities"
 

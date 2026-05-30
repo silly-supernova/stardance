@@ -14,11 +14,11 @@ class My::VerificationsController < ApplicationController
       current_user.apply_hca_verification_payload!(payload) if payload.present?
     end
 
-    redirect_back fallback_location: user_path(current_user), notice: status_message
+    redirect_back fallback_location: profile_path(current_user.display_name), notice: status_message
   rescue StandardError => e
     Rails.logger.warn("Verification refresh failed: #{e.class}: #{e.message}")
     Sentry.capture_exception(e, extra: { user_id: current_user&.id })
-    redirect_back fallback_location: user_path(current_user),
+    redirect_back fallback_location: profile_path(current_user.display_name),
                   alert: "Couldn't check your verification status right now — try again in a moment."
   end
 

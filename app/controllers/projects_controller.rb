@@ -1,4 +1,9 @@
 class ProjectsController < ApplicationController
+  # Mission + payout-votes render as discover-rail modules on the project page.
+  # The expanded mission module also previews the next guide step.
+  discover_rail_widgets :project_mission_expanded, :ship_intro, :payout_votes,
+                        context: -> { { project: @project, votes_for_payout: @votes_for_payout } }
+
   before_action :set_project_minimal, only: [ :edit, :update, :destroy ]
   before_action :set_project, only: [ :show, :readme, :add_test_time ]
   before_action :redirect_guest_owner_to_link!, only: [ :show, :readme, :edit, :update ]
@@ -141,7 +146,11 @@ class ProjectsController < ApplicationController
   def add_test_time
     authorize @project
 
-    hackatime_project = current_user.hackatime_projects.find_or_initialize_by(name: test_time_hackatime_project_name)
+    # NB: query the table directly rather than current_user.hackatime_projects —
+    # that reader is overridden (User::HackatimeSync) to only surface real synced
+    # projects, so it would never find the test-time row and a second click would
+    # try to insert a duplicate, tripping the (user_id, name) uniqueness check.
+    hackatime_project = User::HackatimeProject.find_or_initialize_by(user: current_user, name: test_time_hackatime_project_name)
     hackatime_project.project = @project
     hackatime_project.save!
 
@@ -295,7 +304,7 @@ class ProjectsController < ApplicationController
 
       @project.soft_delete!(force: force)
       flash[:notice] = "Project deleted successfully"
-      redirect_to projects_user_path(current_user)
+      redirect_to profile_projects_path(current_user.display_name)
     rescue ActiveRecord::RecordInvalid => e
       flash[:alert] = e.record.errors.full_messages.to_sentence
       redirect_to project_path(@project)

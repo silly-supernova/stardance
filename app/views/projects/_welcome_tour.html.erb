@@ -7,6 +7,11 @@
     subtitle: @project.title.presence ? "— #{@project.title} —" : nil,
     autoAdvance: 3200
   }.compact
+  steps << {
+    text: "Before you start coding, get started with Hackatime to log your time!",
+    selector: ".project-show__hackatime-connect, .project-show__field--hackatime",
+    waitForTarget: true
+  }
 %>
 
 <div class="welcome-tour"

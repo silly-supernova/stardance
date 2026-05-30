@@ -1,5 +1,5 @@
 .mission-panel {
-  padding: var(--space-l);
+  padding: var(--space-m);
   border-radius: 14px;
   border: 1px solid var(--color-space-border, rgba(255, 255, 255, 0.12));
   background: var(--color-space-card, rgba(255, 255, 255, 0.04));
@@ -25,8 +25,32 @@
 .mission-panel__header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: var(--space-m);
+  flex-wrap: wrap;
   margin-bottom: var(--space-m);
+
+  // No progress row follows in the shipped state — don't leave a trailing gap.
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.mission-panel__identity {
+  display: flex;
+  align-items: center;
+  gap: var(--space-m);
+  flex: 1;
+  min-width: 0;
+}
+
+// Pre-ship carries the most actions (primary guide + view mission + detach),
+// which squish against the identity in the narrow discover rail. Stack the
+// header so the actions sit full-width below the mission name. The shipped
+// state has fewer, smaller buttons and keeps the side-by-side layout.
+.mission-panel:not(.mission-panel--shipped) .mission-panel__header {
+  flex-direction: column;
+  align-items: stretch;
 }
 
 .mission-panel__icon {
@@ -37,7 +61,6 @@
 }
 
 .mission-panel__heading {
-  flex: 1;
   min-width: 0;
 }
 
@@ -200,6 +223,55 @@
   gap: var(--space-xs);
 }
 
+// Expanded variant: a preview of the next unfinished guide step.
+.mission-panel__next-step {
+  margin-top: var(--space-m);
+  padding-top: var(--space-m);
+  border-top: 1px solid var(--color-space-border, rgba(255, 255, 255, 0.12));
+}
+
+.mission-panel__next-step-label {
+  margin: 0 0 var(--space-xxs);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-space-text-muted, var(--color-space-text));
+}
+
+.mission-panel__next-step-title {
+  margin: 0 0 var(--space-s);
+  font-size: var(--font-body);
+  font-weight: 700;
+}
+
+// Cap the height so a long step reads as a preview (fades out); a short step
+// that fits shows in full. "Continue guide" above is the read-on affordance.
+.mission-panel__next-step-body {
+  max-height: 320px;
+  overflow: hidden;
+  font-size: var(--font-size-s);
+  line-height: 1.5;
+  color: var(--color-space-text-muted, var(--color-space-text));
+  -webkit-mask-image: linear-gradient(to bottom, #000 78%, transparent);
+  mask-image: linear-gradient(to bottom, #000 78%, transparent);
+}
+
+.mission-panel__next-step-more {
+  display: inline-block;
+  margin-top: var(--space-s);
+  font-family: var(--font-family-text);
+  font-size: var(--font-size-s);
+  font-weight: 700;
+  color: var(--color-brand-highlight);
+  text-decoration: none;
+
+  &:hover,
+  &:focus-visible {
+    text-decoration: underline;
+  }
+}
+
 .mission-panel__progress-label {
   margin: 0;
   font-size: var(--font-size-s);
@@ -253,7 +325,7 @@
 
 .mission-panel__actions {
   display: flex;
+  align-items: center;
   gap: var(--space-s);
   flex-wrap: wrap;
-  margin-top: var(--space-m);
 }

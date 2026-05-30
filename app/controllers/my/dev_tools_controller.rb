@@ -11,7 +11,7 @@ class My::DevToolsController < ApplicationController
       persist_with_callbacks: false
     )
 
-    redirect_back fallback_location: user_path(current_user),
+    redirect_back fallback_location: profile_path(current_user.display_name),
                   notice: "Dev override: pretending identity is verified."
   end
 end

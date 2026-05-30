@@ -1,7 +1,7 @@
 class Projects::ShipsController < ApplicationController
   before_action :set_project
-  before_action :setup_chrome,    only: [ :new, :info, :review_step, :compose, :create ]
-  before_action :require_shippable, only: [ :review_step, :compose, :create ]
+  before_action :setup_chrome,    only: [ :new, :compose, :create ]
+  before_action :require_shippable, only: [ :compose, :create ]
 
   # Step 0 — "what is a ship" refresher (video only). Entry point.
   def new
@@ -9,44 +9,25 @@ class Projects::ShipsController < ApplicationController
     @step = 0
   end
 
-  # Step 1 — project info form. Available regardless of shippable? state,
-  # since this is the screen where you fix unmet requirements.
-  def info
-    authorize @project, :ship?
-    @step = 1
-    @project_times = current_user.try_sync_hackatime_data!&.dig(:projects) || {}
-  end
-
-  # Step 2 — review instructions form. Requires the project to be shippable
-  # (handled by the before_action).
-  def review_step
-    authorize @project, :ship?
-    @step = 2
-  end
-
-  # Step 3 — ship composer. Same shippable gate as step 2.
+  # Step 1 — ship composer (the only real step). Writing the ship post,
+  # acknowledging mission requirements, and shipping all happen here.
+  # Requires the project to be shippable (handled by the before_action).
   def compose
     authorize @project, :ship?
-    @step = 3
+    @step = 1
     @last_ship = @project.last_ship_event
   end
 
   def create
     authorize @project, :ship?
-    # Read non-destructively — a redirect back (e.g. missing ack) must not
-    # clear steps 2 & 3 from the wizard.
-    wizard = session[:ship_wizard] || {}
-    review_instructions = (wizard["review_instructions"].presence || params[:review_instructions]).to_s.strip.presence
-    mission_payout_path = wizard["mission_payout_path"].presence || params[:mission_payout_path]
-    submission_guide_ack = wizard.fetch("mission_submission_guide_acknowledged", false) ||
-                           params[:mission_submission_guide_acknowledged].to_s == "1"
+    # Everything posts from the single ship page, so read straight from params.
+    mission_payout_path = params[:mission_payout_path]
+    submission_guide_ack = params[:mission_submission_guide_acknowledged].to_s == "1"
 
     if mission_submission_guide_ack_required? && !submission_guide_ack
-      redirect_to review_project_ships_path(@project),
+      redirect_to compose_project_ships_path(@project),
                   alert: "Read and acknowledge the mission submission guide before shipping." and return
     end
-
-    session.delete(:ship_wizard)
 
     unless @project.readme_is_raw_github_url?
       flash.now[:warning] = "Your README link doesn't appear to be a raw GitHub URL. Are you sure you're using another Git Hosting provider?"
@@ -58,8 +39,7 @@ class Projects::ShipsController < ApplicationController
     @project.with_lock do
       @project.submit_for_review!
       ship_event = Post::ShipEvent.create!(
-        body: params[:ship_update].to_s.strip,
-        review_instructions: review_instructions
+        body: params[:ship_update].to_s.strip
       )
       @post = @project.posts.create!(user: current_user, postable: ship_event)
       maybe_create_mission_submission(ship_event, mission_payout_path, submission_guide_ack)
@@ -81,9 +61,10 @@ class Projects::ShipsController < ApplicationController
     end
 
     if !reship
-      redirect_to project_path(@project), notice: "Congratulations! Your project has been submitted for review!"
+      redirect_to project_path(@project, just_shipped: 1), notice: "Congratulations! Your project has been submitted for review! While you wait, rate other projects at the voting booth."
     elsif probe_result.ok?
-      redirect_to project_path(@project), notice: "Ship submitted! Your project is being voted on again!"
+      @post.postable.update!(certification_status: "approved")
+      redirect_to project_path(@project, just_shipped: 1), notice: "Ship submitted! Your project is now out for voting. Rate other projects to help yours get noticed too."
     else
       redirect_to project_path(@project), notice: "We couldn't reach your links. Make sure they're online and public, then submit again!"
     end
@@ -103,13 +84,13 @@ class Projects::ShipsController < ApplicationController
       @body_class = "ship-page"
     end
 
-    # Steps 2 and 3 can only be reached once the project meets every shipping
-    # requirement. If a user lands on those URLs early (typed-in URL, stale
-    # bookmark, mid-flow regression after editing project info), bounce them
-    # back to the info step where they can fix things.
+    # The review/ship steps can only be reached once the project meets every
+    # shipping requirement. If a user lands on those URLs early (typed-in URL,
+    # stale bookmark, mid-flow regression), bounce them back to the project
+    # page, where project info is completed and remaining requirements surface.
     def require_shippable
       return if @project.shippable?
-      redirect_to info_project_ships_path(@project)
+      redirect_to project_path(@project), alert: "Finish the remaining requirements before shipping."
     end
 
     def initial_ship?
@@ -117,7 +98,9 @@ class Projects::ShipsController < ApplicationController
     end
 
     def mission_submission_guide_ack_required?
-      @project.current_mission&.submission_guide.present?
+      mission = @project.current_mission
+      return false if mission.nil? || @project.shipped_to_mission?(mission)
+      mission.submission_guide.present?
     end
 
     def maybe_create_mission_submission(ship_event, payout_path_param, submission_guide_acknowledged = false)
@@ -125,6 +108,8 @@ class Projects::ShipsController < ApplicationController
       return unless attachment
 
       mission = attachment.mission
+      # Only the first ship to a mission counts; later ships are regular ships.
+      return if @project.shipped_to_mission?(mission)
       payout_path = resolve_payout_path(mission, payout_path_param)
       ack_time = (submission_guide_acknowledged && mission.submission_guide.present?) ? Time.current : nil
 

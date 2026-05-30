@@ -184,60 +184,6 @@ button.sidebar__nav-link {
   color: inherit;
 }
 
-.locked-tab-popover {
-  position: fixed;
-  z-index: 100;
-  max-width: 22ch;
-  padding: var(--space-xs) var(--space-s);
-  background-color: var(--color-space-bg-2);
-  color: var(--color-space-text);
-  border-radius: calc(var(--border-radius) / 2);
-  font-size: var(--font-size-base);
-  line-height: 1.3;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-  pointer-events: none;
-  opacity: 0;
-  transform: translateX(-4px);
-  transition:
-    opacity 120ms ease,
-    transform 120ms ease;
-}
-
-.locked-tab-popover--visible {
-  opacity: 1;
-  transform: translateX(0);
-}
-
-.locked-tab-popover::before {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: -6px;
-  transform: translateY(-50%);
-  border: 6px solid transparent;
-  border-right-color: var(--color-space-bg-2);
-  border-left: 0;
-}
-
-// Top-positioned variant: popover sits above the trigger, arrow points down.
-.locked-tab-popover--top {
-  transform: translateY(4px);
-
-  &.locked-tab-popover--visible {
-    transform: translateY(0);
-  }
-
-  &::before {
-    top: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    border: 6px solid transparent;
-    border-top-color: var(--color-space-bg-2);
-    border-bottom: 0;
-    border-right-color: transparent;
-  }
-}
-
 .sidebar__nav-link {
   transition: font-size 0.15s ease;
 }

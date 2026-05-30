@@ -70,11 +70,17 @@ application.register("customs-warning", CustomsWarningController);
 import DecisionTreeController from "./decision_tree_controller";
 application.register("decision-tree", DecisionTreeController);
 
+import DismissableController from "./dismissable_controller";
+application.register("dismissable", DismissableController);
+
 import EmojiPickerController from "./emoji_picker_controller";
 application.register("emoji-picker", EmojiPickerController);
 
 import FallingStarController from "./falling_star_controller";
 application.register("falling-star", FallingStarController);
+
+import HorizontalScrollController from "./horizontal_scroll_controller";
+application.register("horizontal-scroll", HorizontalScrollController);
 
 import FaqAccordionController from "./faq_accordion_controller";
 application.register("faq-accordion", FaqAccordionController);
@@ -102,9 +108,6 @@ application.register("hero-warp", HeroWarpController);
 
 import JsonHighlightController from "./json_highlight_controller";
 application.register("json-highlight", JsonHighlightController);
-
-import LockedTabController from "./locked_tab_controller";
-application.register("locked-tab", LockedTabController);
 
 import MarkdownPreviewController from "./markdown_preview_controller";
 application.register("markdown-preview", MarkdownPreviewController);

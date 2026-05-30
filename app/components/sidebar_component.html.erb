@@ -38,8 +38,9 @@
           <% if item[:locked] %>
             <button type="button"
                     class="<%= link_classes %> sidebar__nav-link--locked"
-                    data-controller="locked-tab"
-                    data-locked-tab-message-value="<%= item[:locked_message] %>"
+                    data-controller="tooltip"
+                    data-tooltip-message-value="<%= item[:locked_message] %>"
+                    data-tooltip-position-value="right"
                     data-slug="<%= item[:slug] %>"
                     aria-disabled="true"
                     aria-haspopup="dialog"
@@ -70,7 +71,7 @@
     <div class="sidebar__user-card">
       <div class="sidebar__user-meta">
         <span class="sidebar__user-meta-label">logged in as</span>
-        <%= link_to user_path(user), class: "sidebar__user-meta-handle", data: { turbo: true } do %>
+        <%= link_to profile_path(user.display_name), class: "sidebar__user-meta-handle", data: { turbo: true } do %>
           @<%= user.display_name %>
         <% end %>
       </div>

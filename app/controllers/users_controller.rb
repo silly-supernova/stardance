@@ -21,7 +21,7 @@ class UsersController < ApplicationController
           flash.now[:notice] = "Profile updated."
           render turbo_stream: turbo_stream.update("flash-region", partial: "shared/flash")
         end
-        format.html { redirect_to @user, notice: "Profile updated." }
+        format.html { redirect_to profile_path(@user.display_name), notice: "Profile updated." }
       end
     else
       respond_to do |format|
@@ -51,7 +51,13 @@ class UsersController < ApplicationController
   private
 
   def set_user
-    @user = User.includes(:preference).find(params[:id])
+    @user = User.includes(:preference)
+
+    if params[:username].present?
+      @user = @user.find_by!("LOWER(display_name) = ?", params[:username].downcase)
+    else
+      @user = @user.find(params[:id])
+    end
   end
 
   def authorize_user

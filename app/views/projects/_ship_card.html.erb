@@ -30,7 +30,7 @@
       <p class="project-show__latest-ship-heading">
         <% if author %>
           <%= link_to "@#{author.display_name}",
-                      user_path(author),
+                      profile_path(author.display_name),
                       class: "project-show__latest-ship-author",
                       data: { turbo_frame: "_top", turbo_prefetch: "true" } %>
         <% end %>

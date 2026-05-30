@@ -30,10 +30,17 @@ export default class extends Controller {
       type: String,
       default: "project-form--readme-locked",
     },
+    // Field keys (matching FIELD_REQUIREMENT_MAP) that arrived unfinished and
+    // should be highlighted red until the user fills them in.
+    incompleteFields: {
+      type: Array,
+      default: [],
+    },
   };
 
   connect() {
     this.submitting = false;
+    this.trackedFields = new Set(this.incompleteFieldsValue);
     this.userEditedReadme = false;
     this.debouncedDetect = this.debounce(() => this.detectReadme(), 400);
     this.boundRecheck = () => this.recheckRequirements();
@@ -69,6 +76,7 @@ export default class extends Controller {
   }
 
   recheckRequirements() {
+    this.refreshHighlights();
     if (!this.hasRequirementsContainerTarget) return;
 
     const filled = {
@@ -127,6 +135,52 @@ export default class extends Controller {
     // `banner` requirement was never in the list to begin with — recheck
     // still works either way.
     return false;
+  }
+
+  // Toggles the red "still to complete" highlight on each tracked field: shown
+  // while the field is empty, removed as soon as it's filled (re-added if the
+  // user clears it again).
+  refreshHighlights() {
+    if (!this.trackedFields || this.trackedFields.size === 0) return;
+
+    this.trackedFields.forEach((field) => {
+      const el = this.highlightElementFor(field);
+      if (!el) return;
+      el.classList.toggle(
+        this.highlightClassFor(field),
+        !this.fieldFilledFor(field),
+      );
+    });
+  }
+
+  highlightElementFor(field) {
+    switch (field) {
+      case "description":
+        return this.hasDescriptionTarget ? this.descriptionTarget : null;
+      case "demo_url":
+        return this.hasDemoUrlTarget ? this.demoUrlTarget : null;
+      case "repo_url":
+        return this.hasRepoUrlTarget ? this.repoUrlTarget : null;
+      case "readme_url":
+        return this.hasReadmeUrlTarget ? this.readmeUrlTarget : null;
+      case "banner":
+        return this.element.querySelector(".project-show__banner");
+      default:
+        return null;
+    }
+  }
+
+  highlightClassFor(field) {
+    if (field === "description")
+      return "project-show__description-input--incomplete";
+    if (field === "banner") return "project-show__banner--incomplete";
+    return "project-show__control--incomplete";
+  }
+
+  fieldFilledFor(field) {
+    if (field === "banner") return this.bannerFilled();
+    const el = this.highlightElementFor(field);
+    return this.fieldFilled(el);
   }
 
   validateTitle(event) {
