@@ -6,6 +6,8 @@ class Projects::DevlogsController < ApplicationController
   before_action :require_hackatime_project, only: %i[create]
   before_action :sync_hackatime_projects, only: %i[create]
 
+  skip_before_action :remember_page, only: %i[preview_time]
+
   def create
     authorize @project, :create_devlog?
 
