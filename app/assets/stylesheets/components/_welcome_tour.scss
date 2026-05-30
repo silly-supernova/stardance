@@ -106,7 +106,7 @@
     }
 
     // Ease out — JS adds this class shortly before advancing so the tooltip
-    // fades away instead of disappearing instantly.
+    // fades awayasd instead of disappearing instantly.
     &.welcome-tour--ceremonial-leaving .welcome-tour__tooltip {
       animation: welcome-tour-ceremonial-out 500ms ease forwards;
     }
