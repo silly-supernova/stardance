@@ -636,6 +636,32 @@ $slider-star: url("onboarding/star-radio-active.svg");
   }
 }
 
+@keyframes slider-jiggle {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px) rotate(-3deg); }
+  40% { transform: translateX(5px) rotate(2deg); }
+  60% { transform: translateX(-3px) rotate(-1deg); }
+  80% { transform: translateX(2px); }
+}
+
+.onboarding-experience__slider.jiggle {
+  &::-webkit-slider-thumb {
+    animation: slider-jiggle 0.5s ease;
+  }
+  &::-moz-range-thumb {
+    animation: slider-jiggle 0.5s ease;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .onboarding-experience__slider.jiggle {
+    &::-webkit-slider-thumb,
+    &::-moz-range-thumb {
+      animation: none;
+    }
+  }
+}
+
 .onboarding-experience__slider-ticks {
   display: flex;
   justify-content: space-between;

@@ -25,9 +25,6 @@
   highlight_incomplete_fields = (can_edit_project && params[:complete].present?) ? @project.incomplete_info_fields : []
 %>
 
-<% if @show_project_tour %>
-  <%= render "welcome_tour" %>
-<% end %>
 
 <div class="app-layout">
   <div class="app-layout__main">
@@ -61,7 +58,7 @@
             <% end %>
 
             <label class="project-show__banner-upload">
-              <span>Change banner</span>
+              <span>Change screenshot</span>
               <%= form.file_field :banner, accept: Project::ACCEPTED_CONTENT_TYPES.join(","), class: "project-show__banner-input",
                     data: { "file-upload-target": "input", action: "change->file-upload#change" } %>
             </label>
@@ -404,6 +401,24 @@
                   ) %>
             <% end %>
           <% end %>
+          <% if is_member && current_user && @project.info_complete? %>
+            <% unless current_user.identity_verified? %>
+              <%= render ActionButtonComponent.new(
+                    text: "Verify your identity",
+                    variant: :primary,
+                    type: :button,
+                    onclick: "document.getElementById('idv-verify-modal').showModal()"
+                  ) %>
+            <% else %>
+              <% unless current_user.shop_tutorial_completed? %>
+                <%= render ActionButtonComponent.new(
+                      text: "Complete shop tutorial",
+                      variant: :primary,
+                      href: "/shop"
+                    ) %>
+              <% end %>
+            <% end %>
+          <% end %>
           <% if @project.shippable? %>
             <% if unposted_seconds >= 15 * 60 %>
               <%= render ActionButtonComponent.new(
@@ -662,7 +677,7 @@
           </button>
           <button type="button"
                   class="ship-modal__btn ship-modal__btn--primary"
-                  onclick="document.getElementById('ship-video-modal-' + <%= @project.id.to_json %>).close(); document.getElementById('ship-post-modal-' + <%= @project.id.to_json %>).showModal()">
+                  onclick="document.getElementById('ship-video-modal-' + <%= @project.id.to_json %>).close(); document.getElementById('ship-post-modal-' + <%= @project.id.to_json %>).showModal(); document.getElementById('ship-post-modal-' + <%= @project.id.to_json %>).querySelector('.ship-modal__panel').scrollTop = 0">
             Continue →
           </button>
         </div>
@@ -678,7 +693,8 @@
       <div class="ship-modal__panel">
         <%= form_with url: project_ships_path(@project),
                       method: :post,
-                      html: { class: "ship-modal__form", data: { turbo_frame: "_top" } } do |form| %>
+                      data: { turbo: false },
+                      html: { class: "ship-modal__form" } do |form| %>
           <% ship_mission = @project.current_mission %>
           <% ship_to_mission = ship_mission && !@project.shipped_to_mission?(ship_mission) %>
           <% if ship_to_mission %>

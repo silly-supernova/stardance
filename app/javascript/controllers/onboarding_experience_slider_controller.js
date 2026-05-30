@@ -32,6 +32,12 @@ export default class extends Controller {
 
   connect() {
     this._setSubmitEnabled(false);
+    this._touched = false;
+    this._startJiggle();
+  }
+
+  disconnect() {
+    this._stopJiggle();
   }
 
   // Triggered by user input on the slider (drag, click, arrow keys).
@@ -47,6 +53,30 @@ export default class extends Controller {
     this.element.style.setProperty("--slider-fill", ratio);
 
     this._setSubmitEnabled(true);
+
+    if (!this._touched) {
+      this._touched = true;
+      this._stopJiggle();
+    }
+  }
+
+  _startJiggle() {
+    const jiggle = () => {
+      if (this._touched) return;
+      this.sliderTarget.classList.remove("jiggle");
+      void this.sliderTarget.offsetWidth;
+      this.sliderTarget.classList.add("jiggle");
+      this._jiggleTimer = setTimeout(jiggle, 1000 + Math.random() * 500);
+    };
+    jiggle();
+  }
+
+  _stopJiggle() {
+    if (this._jiggleTimer) {
+      clearTimeout(this._jiggleTimer);
+      this._jiggleTimer = null;
+    }
+    this.sliderTarget.classList.remove("jiggle");
   }
 
   _setSubmitEnabled(enabled) {
