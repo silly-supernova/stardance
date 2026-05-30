@@ -71,7 +71,7 @@ class Projects::ShipsController < ApplicationController
       elsif probe_result.ok?
         @project.approve! if @project.may_approve?
         @post.postable.update!(certification_status: "approved")
-        maybe_create_ysws_review(ship_event)
+        create_ysws_review(ship_event)
       else
         @project.ship_reviews.create!(
           status: :returned,
@@ -152,7 +152,7 @@ class Projects::ShipsController < ApplicationController
         .exists?
     end
 
-    def maybe_create_ysws_review(ship_event) # Only create review if this is NOT the first ship (i.e., there are previous approved ships)
+    def create_ysws_review(ship_event)
       Certification::YswsReviewCreator.new(
         ship_event: ship_event,
         user: current_user,
