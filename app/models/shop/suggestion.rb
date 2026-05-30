@@ -18,7 +18,7 @@
 #
 #  fk_rails_...  (user_id => users.id)
 #
-class ShopSuggestion < ApplicationRecord
+class Shop::Suggestion < ApplicationRecord
   belongs_to :user
 
   validates :item, presence: true, length: { minimum: 10, maximum: 1000 }

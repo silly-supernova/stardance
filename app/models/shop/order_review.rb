@@ -21,7 +21,7 @@
 #  fk_rails_...  (shop_order_id => shop_orders.id)
 #  fk_rails_...  (user_id => users.id)
 #
-class ShopOrderReview < ApplicationRecord
+class Shop::OrderReview < ApplicationRecord
   has_paper_trail
 
   belongs_to :shop_order, class_name: "Shop::Order"

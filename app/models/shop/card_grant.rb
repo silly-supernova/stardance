@@ -20,7 +20,7 @@
 #  fk_rails_...  (shop_item_id => shop_items.id)
 #  fk_rails_...  (user_id => users.id)
 #
-class ShopCardGrant < ApplicationRecord
+class Shop::CardGrant < ApplicationRecord
   belongs_to :user
   belongs_to :shop_item, class_name: "Shop::Item"
 

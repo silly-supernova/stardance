@@ -20,7 +20,7 @@
 #  fk_rails_...  (shop_item_modifier_id => shop_item_modifiers.id)
 #  fk_rails_...  (shop_order_id => shop_orders.id)
 #
-class ShopOrderModifierSelection < ApplicationRecord
+class Shop::OrderModifierSelection < ApplicationRecord
   belongs_to :shop_order, class_name: "Shop::Order"
   belongs_to :shop_item_modifier
 end

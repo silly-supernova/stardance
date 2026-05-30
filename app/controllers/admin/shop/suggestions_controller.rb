@@ -2,10 +2,10 @@ class Admin::Shop::SuggestionsController < Admin::ApplicationController
     before_action :set_suggestion, only: [ :dismiss, :disable_for_user ]
 
     def index
-      authorize ShopSuggestion
+      authorize Shop::Suggestion
 
       @pagy, @suggestions = pagy(
-        ShopSuggestion.includes(:user).order(created_at: :desc)
+        Shop::Suggestion.includes(:user).order(created_at: :desc)
       )
     end
 
@@ -32,6 +32,6 @@ class Admin::Shop::SuggestionsController < Admin::ApplicationController
     private
 
     def set_suggestion
-      @suggestion = ShopSuggestion.find(params[:id])
+      @suggestion = Shop::Suggestion.find(params[:id])
     end
 end

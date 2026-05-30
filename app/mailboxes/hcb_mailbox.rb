@@ -3,7 +3,7 @@ class HCBMailbox < ApplicationMailbox
     if mail.subject.include?("You've received a donation for Flavortown")
       if mail.body.decoded =~ %r{grants/}
         grant_id = mail.body.decoded.split("grants/").last.to_s.split(/[^a-zA-Z0-9]/).first
-        shop_card_grant = ShopCardGrant.find_by(hcb_grant_hashid: "cdg_" + grant_id)
+        shop_card_grant = Shop::CardGrant.find_by(hcb_grant_hashid: "cdg_" + grant_id)
         donation_id = mail.body.decoded.split("donations/").last.to_s.split(/[\/\s]/).first.remove('"')
 
         if shop_card_grant
@@ -28,7 +28,7 @@ class HCBMailbox < ApplicationMailbox
             Rails.logger.error("Failed to fetch donation details for Donation ID #{donation_id}")
           end
         else
-          Rails.logger.error("ShopCardGrant not found for Grant ID cdg_#{grant_id}")
+          Rails.logger.error("Shop::CardGrant not found for Grant ID cdg_#{grant_id}")
         end
       end
     end

@@ -6,7 +6,7 @@ class Airtable::ShopSuggestionSyncJob < ApplicationJob
   end
 
   def perform(shop_suggestion_id)
-    suggestion = ShopSuggestion.find_by(id: shop_suggestion_id)
+    suggestion = Shop::Suggestion.find_by(id: shop_suggestion_id)
     return if suggestion.nil?
 
     table.create(field_mapping(suggestion))

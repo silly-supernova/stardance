@@ -65,14 +65,14 @@ class Shop::Order < ApplicationRecord
 
   belongs_to :user
   belongs_to :shop_item, class_name: "Shop::Item"
-  belongs_to :shop_card_grant, optional: true
+  belongs_to :shop_card_grant, class_name: "Shop::CardGrant", optional: true
   belongs_to :parent_order, class_name: "Shop::Order", optional: true
   has_many :accessory_orders, class_name: "Shop::Order", foreign_key: :parent_order_id, dependent: :destroy
-  has_many :shop_order_modifier_selections, dependent: :destroy
+  has_many :shop_order_modifier_selections, class_name: "Shop::OrderModifierSelection", dependent: :destroy
   has_many :selected_modifiers, through: :shop_order_modifier_selections, source: :shop_item_modifier
-  has_many :reviews, class_name: "ShopOrderReview", dependent: :destroy
+  has_many :reviews, class_name: "Shop::OrderReview", dependent: :destroy
   has_one :mission_submission, class_name: "Mission::Submission", inverse_of: :shop_order
-  belongs_to :warehouse_package, class_name: "ShopWarehousePackage", optional: true
+  belongs_to :warehouse_package, class_name: "Shop::WarehousePackage", optional: true
   belongs_to :assigned_to_user, class_name: "User", optional: true
   belongs_to :fulfillment_payout_line, optional: true
   belongs_to :fraud_related_project, class_name: "Project", optional: true, foreign_key: :fraud_related_project_id, inverse_of: false

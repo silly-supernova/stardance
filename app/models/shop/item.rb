@@ -259,16 +259,16 @@ class Shop::Item < ApplicationRecord
   has_many :mission_shop_unlocks,  class_name: "Mission::ShopUnlock", dependent: :destroy
   has_many :unlocking_missions,    through: :mission_shop_unlocks, source: :mission
 
-  has_many :shop_item_attachments, foreign_key: :parent_item_id, dependent: :destroy
+  has_many :shop_item_attachments, class_name: "Shop::ItemAttachment", foreign_key: :parent_item_id, dependent: :destroy
   has_many :accessories, through: :shop_item_attachments, source: :accessory_item
 
-  has_many :shop_item_modifiers, dependent: :destroy
+  has_many :shop_item_modifiers, class_name: "Shop::ItemModifier", dependent: :destroy
   accepts_nested_attributes_for :shop_item_modifiers, allow_destroy: true,
     reject_if: proc { |attrs| attrs["name"].blank? }
-  has_many :shop_item_categories, dependent: :destroy
-  has_many :shop_categories, through: :shop_item_categories
-  has_many :shop_item_sources, dependent: :destroy
-  has_many :shop_sources, through: :shop_item_sources
+  has_many :shop_item_categories, class_name: "Shop::ItemCategory", dependent: :destroy
+  has_many :shop_categories, through: :shop_item_categories, class_name: "Shop::Category"
+  has_many :shop_item_sources, class_name: "Shop::ItemSource", dependent: :destroy
+  has_many :shop_sources, through: :shop_item_sources, class_name: "Shop::Source"
 
   def agh_contents=(value)
     if value.is_a?(String) && value.present?

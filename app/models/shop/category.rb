@@ -15,10 +15,10 @@
 #  index_shop_categories_on_position  (position)
 #  index_shop_categories_on_slug      (slug) UNIQUE
 #
-class ShopCategory < ApplicationRecord
+class Shop::Category < ApplicationRecord
   ALL_SLUG = "all"
 
-  has_many :shop_item_categories, dependent: :destroy
+  has_many :shop_item_categories, class_name: "Shop::ItemCategory", dependent: :destroy
   has_many :shop_items, through: :shop_item_categories, class_name: "Shop::Item"
 
   validates :slug, :title, :hub_title, presence: true

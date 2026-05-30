@@ -21,6 +21,6 @@
 #
 require 'rails_helper'
 
-RSpec.describe ShopItemAttachment, type: :model do
+RSpec.describe Shop::ItemAttachment, type: :model do
   pending "add some examples to (or delete) #{__FILE__}"
 end

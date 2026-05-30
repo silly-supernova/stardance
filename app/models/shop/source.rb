@@ -14,8 +14,8 @@
 #  index_shop_sources_on_position  (position)
 #  index_shop_sources_on_slug      (slug) UNIQUE
 #
-class ShopSource < ApplicationRecord
-  has_many :shop_item_sources, dependent: :destroy
+class Shop::Source < ApplicationRecord
+  has_many :shop_item_sources, class_name: "Shop::ItemSource", dependent: :destroy
   has_many :shop_items, through: :shop_item_sources, class_name: "Shop::Item"
 
   validates :slug, :title, presence: true

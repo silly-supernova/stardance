@@ -2,12 +2,12 @@ module Shop::HCBGrantFulfillable
   extend ActiveSupport::Concern
 
   included do
-    has_many :shop_card_grants, through: :shop_orders
+    has_many :shop_card_grants, through: :shop_orders, class_name: "Shop::CardGrant"
     after_save :enqueue_hcb_locks_update, if: :hcb_locks_changed?
   end
 
   def fulfill!(shop_order)
-    ShopCardGrant.with_advisory_lock("hcb_grant_fulfill_#{shop_order.user_id}_#{id}", timeout_seconds: 15) do
+    Shop::CardGrant.with_advisory_lock("hcb_grant_fulfill_#{shop_order.user_id}_#{id}", timeout_seconds: 15) do
       shop_order.reload
       return if shop_order.fulfilled?
 
@@ -21,7 +21,7 @@ module Shop::HCBGrantFulfillable
     amount_cents = (usd_cost * shop_order.quantity * 100).to_i
     email = shop_order.user.grant_email
 
-    grant_rec = ShopCardGrant.find_or_initialize_by(
+    grant_rec = Shop::CardGrant.find_or_initialize_by(
       user: shop_order.user,
       shop_item: self
     )
@@ -81,7 +81,7 @@ module Shop::HCBGrantFulfillable
       rescue => e
         if user_canceled
           Rails.logger.info "Grant was canceled, creating new grant"
-          grant_rec = ShopCardGrant.new(user: shop_order.user, shop_item: self)
+          grant_rec = Shop::CardGrant.new(user: shop_order.user, shop_item: self)
           user_canceled = false
           retry
         else

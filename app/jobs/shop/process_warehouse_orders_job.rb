@@ -23,8 +23,8 @@ class Shop::ProcessWarehouseOrdersJob < ApplicationJob
   def process_coalesced_orders(orders, user_id, frozen_address)
     warehouse_pkg = nil
 
-    ShopWarehousePackage.transaction do
-      warehouse_pkg = ShopWarehousePackage.create!(
+    Shop::WarehousePackage.transaction do
+      warehouse_pkg = Shop::WarehousePackage.create!(
         user_id: user_id,
         frozen_address: frozen_address
       )

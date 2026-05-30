@@ -88,7 +88,7 @@ end
   { slug: "merch",    title: "Merch Shop",    hub_title: "Merch",    position: 3 },
   { slug: "games",    title: "Games Shop",    hub_title: "Games",    position: 4 }
 ].each do |attrs|
-  ShopCategory.find_or_create_by!(slug: attrs[:slug]) do |c|
+  Shop::Category.find_or_create_by!(slug: attrs[:slug]) do |c|
     c.title = attrs[:title]
     c.hub_title = attrs[:hub_title]
     c.position = attrs[:position]
@@ -102,7 +102,7 @@ end
   { slug: "third_party_digital",   title: "Third-Party Digital",   position: 3 },
   { slug: "hcb_grant",             title: "HCB Grant",             position: 4 }
 ].each do |attrs|
-  ShopSource.find_or_create_by!(slug: attrs[:slug]) do |s|
+  Shop::Source.find_or_create_by!(slug: attrs[:slug]) do |s|
     s.title = attrs[:title]
     s.position = attrs[:position]
   end
@@ -139,8 +139,8 @@ end
 # Tag the tutorial items so the shop tutorial flow ("open Merch to pick
 # stickers or nothing") has something to show. Other items are categorised
 # per-item via the admin UI.
-merch_category = ShopCategory.find_by!(slug: "merch")
-hq_source = ShopSource.find_by!(slug: "hq")
+merch_category = Shop::Category.find_by!(slug: "merch")
+hq_source = Shop::Source.find_by!(slug: "hq")
 
 [ stickers, tutorial_nothing ].each do |item|
   item.shop_categories << merch_category unless item.shop_categories.include?(merch_category)

@@ -19,7 +19,7 @@
 #  fk_rails_...  (shop_item_id => shop_items.id)
 #  fk_rails_...  (shop_source_id => shop_sources.id)
 #
-class ShopItemSource < ApplicationRecord
+class Shop::ItemSource < ApplicationRecord
   belongs_to :shop_item, class_name: "Shop::Item"
   belongs_to :shop_source
 end

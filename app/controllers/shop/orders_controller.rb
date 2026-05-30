@@ -133,7 +133,7 @@ class Shop::OrdersController < Shop::BaseController
           end
 
           @modifiers.each do |modifier|
-            ShopOrderModifierSelection.create!(
+            Shop::OrderModifierSelection.create!(
               shop_order: @order,
               shop_item_modifier: modifier,
               frozen_modifier_price: modifier.price_for_region(region)

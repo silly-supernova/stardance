@@ -85,7 +85,7 @@
 #  fk_rails_...  (user_id => users.id)
 #
 class Shop::Item::Accessory < Shop::Item
-  has_many :shop_item_attachments, foreign_key: :accessory_item_id, dependent: :destroy
+  has_many :shop_item_attachments, class_name: "Shop::ItemAttachment", foreign_key: :accessory_item_id, dependent: :destroy
   has_many :parent_items, through: :shop_item_attachments, source: :parent_item
 
   validate :must_have_attached_items_if_not_buyable_by_self

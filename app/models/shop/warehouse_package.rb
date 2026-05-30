@@ -21,7 +21,7 @@
 #
 #  fk_rails_...  (user_id => users.id)
 
-class ShopWarehousePackage < ApplicationRecord
+class Shop::WarehousePackage < ApplicationRecord
   has_encrypted :frozen_address, type: :json
 
   belongs_to :user
@@ -37,7 +37,7 @@ class ShopWarehousePackage < ApplicationRecord
 
     if user.email.blank? || frozen_address.blank?
       Rails.logger.warn(
-        "ShopWarehousePackage #{id} missing email or address — skipping"
+        "Shop::WarehousePackage #{id} missing email or address — skipping"
       )
       return
     end

@@ -35,12 +35,12 @@
 #
 #  fk_rails_...  (shop_item_id => shop_items.id)
 #
-class ShopItemModifier < ApplicationRecord
+class Shop::ItemModifier < ApplicationRecord
   include Shop::Regionalizable
 
   belongs_to :shop_item, class_name: "Shop::Item"
   has_one_attached :image
-  has_many :shop_order_modifier_selections, dependent: :destroy
+  has_many :shop_order_modifier_selections, class_name: "Shop::OrderModifierSelection", dependent: :destroy
 
   validates :name, presence: true
   validates :ticket_cost, presence: true, numericality: { only_integer: true, greater_than_or_equal_to: 0 }

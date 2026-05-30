@@ -19,7 +19,7 @@
 #  fk_rails_...  (shop_category_id => shop_categories.id)
 #  fk_rails_...  (shop_item_id => shop_items.id)
 #
-class ShopItemCategory < ApplicationRecord
+class Shop::ItemCategory < ApplicationRecord
   belongs_to :shop_item, class_name: "Shop::Item"
-  belongs_to :shop_category
+  belongs_to :shop_category, class_name: "Shop::Category"
 end
