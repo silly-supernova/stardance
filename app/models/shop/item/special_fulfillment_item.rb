@@ -84,5 +84,5 @@
 #  fk_rails_...  (default_assigned_user_id => users.id) ON DELETE => nullify
 #  fk_rails_...  (user_id => users.id)
 #
-class ShopItem::HQMailItem < ShopItem
+class Shop::Item::SpecialFulfillmentItem < Shop::Item
 end

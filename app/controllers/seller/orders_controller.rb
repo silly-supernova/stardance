@@ -54,7 +54,7 @@ module Seller
     private
 
     def seller_orders
-      ShopOrder.joins(:shop_item).where(shop_items: { user_id: current_user.id, type: "ShopItem::HackClubberItem" })
+      Shop::Order.joins(:shop_item).where(shop_items: { user_id: current_user.id, type: "ShopItem::HackClubberItem" })
     end
 
     def set_order

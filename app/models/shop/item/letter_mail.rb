@@ -84,8 +84,5 @@
 #  fk_rails_...  (default_assigned_user_id => users.id) ON DELETE => nullify
 #  fk_rails_...  (user_id => users.id)
 #
-class ShopItem::SillyItemType < ShopItem
-  def fulfill!(shop_order)
-    shop_order.mark_fulfilled!(nil, nil, "System")
-  end
+class Shop::Item::LetterMail < Shop::Item
 end

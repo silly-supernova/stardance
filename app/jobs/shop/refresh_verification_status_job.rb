@@ -4,7 +4,7 @@ class Shop::RefreshVerificationStatusJob < ApplicationJob
   queue_as :default
 
   def perform
-    user_ids = ShopOrder.where(aasm_state: "awaiting_verification")
+    user_ids = Shop::Order.where(aasm_state: "awaiting_verification")
                         .distinct.pluck(:user_id)
 
     User.where(id: user_ids)

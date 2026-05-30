@@ -7,7 +7,7 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
     @view = params[:view] || "shop_orders"
     @limit = params[:limit] || "10"
 
-    authorize ShopOrder, :index?
+    authorize Shop::Order, :index?
 
     # Fulfillment team can only access fulfillment view - auto-redirect if needed
     # But fraud_dept members with fulfillment_person role should have full access
@@ -23,7 +23,7 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
     end
 
     # Base query
-    orders = ShopOrder.includes(:shop_item, :user, :accessory_orders, :assigned_to_user)
+    orders = Shop::Order.includes(:shop_item, :user, :accessory_orders, :assigned_to_user)
 
     # Apply status filter first if explicitly set (takes priority over view)
     if params[:status].present?
@@ -46,7 +46,7 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
 
     # Apply shared filters to both the orders query and the stats base query
     orders = apply_shared_filters(orders)
-    base = apply_shared_filters(ShopOrder.includes(:shop_item, :user))
+    base = apply_shared_filters(Shop::Order.includes(:shop_item, :user))
 
     @c = {
       pending: base.where(aasm_state: "pending").count,
@@ -112,7 +112,7 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
 
     @can_view_address = @order.can_view_address?(current_user)
     @can_view_address = false if current_user.shop_manager? && !current_user.admin?
-    @is_digital_fulfillment_type = ShopOrder::DIGITAL_FULFILLMENT_TYPES.include?(@order.shop_item.type)
+    @is_digital_fulfillment_type = Shop::Order::DIGITAL_FULFILLMENT_TYPES.include?(@order.shop_item.type)
 
     # Track who is viewing this order (cache-based presence)
     viewer_cache_key = "shop_order_viewers:#{@order.id}"
@@ -131,7 +131,7 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
 
     # Find sibling LetterMail orders for Theseus coalesce button
     if @order.shop_item.type == "ShopItem::LetterMail" && @order.awaiting_periodical_fulfillment?
-      @theseus_sibling_orders = ShopOrder.joins(:shop_item)
+      @theseus_sibling_orders = Shop::Order.joins(:shop_item)
                                          .where(shop_items: { type: "ShopItem::LetterMail" })
                                          .where(user_id: @order.user_id, frozen_address_ciphertext: @order.frozen_address_ciphertext)
                                          .where(aasm_state: "awaiting_periodical_fulfillment")
@@ -565,7 +565,7 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
   private
 
   def set_order
-    @order = ShopOrder.find(params[:id])
+    @order = Shop::Order.find(params[:id])
   end
 
   def apply_shared_filters(scope)
@@ -619,7 +619,7 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
     order_ids = (Array(params[:order_ids]).map(&:to_i) | [ @order.id ]).uniq
 
     @order.user.with_advisory_lock("theseus_send", timeout_seconds: 10) do
-      orders_to_send = ShopOrder.joins(:shop_item)
+      orders_to_send = Shop::Order.joins(:shop_item)
                                 .where(id: order_ids, shop_items: { type: "ShopItem::LetterMail" }, aasm_state: "awaiting_periodical_fulfillment")
                                 .to_a
 
@@ -697,7 +697,7 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
     old_state = @order.aasm_state
     new_state = params[:target_state]
 
-    unless ShopOrder.aasm.states.map { |s| s.name.to_s }.include?(new_state)
+    unless Shop::Order.aasm.states.map { |s| s.name.to_s }.include?(new_state)
       redirect_to admin_shop_order_path(@order), alert: "Invalid state."
       return
     end

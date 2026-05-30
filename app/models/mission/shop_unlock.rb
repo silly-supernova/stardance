@@ -25,7 +25,7 @@ class Mission::ShopUnlock < ApplicationRecord
   has_paper_trail
 
   belongs_to :mission, inverse_of: :shop_unlocks
-  belongs_to :shop_item
+  belongs_to :shop_item, class_name: "Shop::Item"
 
   validates :shop_item_id, uniqueness: { scope: :mission_id }
 end

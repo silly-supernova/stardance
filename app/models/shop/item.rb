@@ -84,7 +84,14 @@
 #  fk_rails_...  (default_assigned_user_id => users.id) ON DELETE => nullify
 #  fk_rails_...  (user_id => users.id)
 #
-class ShopItem < ApplicationRecord
+class Shop::Item < ApplicationRecord
+  # STI compat: the type column stores "ShopItem::FreeStickers" etc.
+  # Keep writing that format so old and new code agree on the DB values.
+  def self.sti_name = name.sub("Shop::Item", "ShopItem")
+  def self.find_sti_class(type_name)
+    super(type_name.sub(/\AShopItem(::|\z)/) { "Shop::Item#{$1}" })
+  end
+
   has_paper_trail
 
   include Shop::Regionalizable
@@ -245,7 +252,7 @@ class ShopItem < ApplicationRecord
   validate :is_range_valid, if: :requires_ship?
   validate :validate_achievement_slugs
 
-  has_many :shop_orders, dependent: :restrict_with_error
+  has_many :shop_orders, class_name: "Shop::Order", dependent: :restrict_with_error
 
   has_many :mission_prizes,        class_name: "Mission::Prize",      dependent: :restrict_with_error
   has_many :prize_missions,        through: :mission_prizes, source: :mission

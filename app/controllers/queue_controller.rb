@@ -18,7 +18,7 @@ class QueueController < ApplicationController
   private
 
   def compute_index_data
-    backlog = ShopOrder.where(aasm_state: "pending")
+    backlog = Shop::Order.where(aasm_state: "pending")
                        .includes(:shop_item)
                        .order(created_at: :asc)
                        .load
@@ -49,7 +49,7 @@ class QueueController < ApplicationController
   end
 
   def compute_avg_response_hours
-    orders = ShopOrder.where(aasm_state: %w[awaiting_periodical_fulfillment rejected fulfilled])
+    orders = Shop::Order.where(aasm_state: %w[awaiting_periodical_fulfillment rejected fulfilled])
                       .where("created_at > ?", 30.days.ago)
                       .includes(:versions)
                       .limit(100)

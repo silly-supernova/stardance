@@ -57,17 +57,17 @@
 #  fk_rails_...  (user_id => users.id)
 #  fk_rails_...  (warehouse_package_id => shop_warehouse_packages.id)
 #
-class ShopOrder < ApplicationRecord
+class Shop::Order < ApplicationRecord
   has_paper_trail ignore: [ :frozen_address_ciphertext ]
 
   include AASM
   include Ledgerable
 
   belongs_to :user
-  belongs_to :shop_item
+  belongs_to :shop_item, class_name: "Shop::Item"
   belongs_to :shop_card_grant, optional: true
-  belongs_to :parent_order, class_name: "ShopOrder", optional: true
-  has_many :accessory_orders, class_name: "ShopOrder", foreign_key: :parent_order_id, dependent: :destroy
+  belongs_to :parent_order, class_name: "Shop::Order", optional: true
+  has_many :accessory_orders, class_name: "Shop::Order", foreign_key: :parent_order_id, dependent: :destroy
   has_many :shop_order_modifier_selections, dependent: :destroy
   has_many :selected_modifiers, through: :shop_order_modifier_selections, source: :shop_item_modifier
   has_many :reviews, class_name: "ShopOrderReview", dependent: :destroy
@@ -113,7 +113,7 @@ class ShopOrder < ApplicationRecord
 
   scope :worth_counting, -> { where.not(aasm_state: %w[rejected refunded]) }
   scope :real, -> { without_item_type("ShopItem::FreeStickers") }
-  scope :manually_fulfilled, -> { joins(:shop_item).merge(ShopItem.where(type: ShopItem::MANUAL_FULFILLMENT_TYPES)) }
+  scope :manually_fulfilled, -> { joins(:shop_item).merge(Shop::Item.where(type: Shop::Item::MANUAL_FULFILLMENT_TYPES)) }
   scope :with_item_type, ->(item_type) { joins(:shop_item).where(shop_items: { type: item_type.to_s }) }
   scope :without_item_type, ->(item_type) { joins(:shop_item).where.not(shop_items: { type: item_type.to_s }) }
 
@@ -236,7 +236,7 @@ class ShopOrder < ApplicationRecord
         self.fulfilled_by = fulfilled_by if fulfilled_by
       end
       after do
-        mark_stickers_received if shop_item.is_a?(ShopItem::FreeStickers)
+        mark_stickers_received if shop_item.is_a?(Shop::Item::FreeStickers)
       end
     end
 
@@ -261,7 +261,7 @@ class ShopOrder < ApplicationRecord
   end
 
   def grant?
-    shop_item.is_a?(ShopItem::HCBGrant) || shop_item.is_a?(ShopItem::HCBPreauthGrant)
+    shop_item.is_a?(Shop::Item::HCBGrant) || shop_item.is_a?(Shop::Item::HCBPreauthGrant)
   end
 
   def topup_url
@@ -428,7 +428,7 @@ class ShopOrder < ApplicationRecord
   def check_free_stickers_requirement
     return if Rails.env.development?
     return if user&.has_gotten_free_stickers?
-    return if shop_item.is_a?(ShopItem::FreeStickers)
+    return if shop_item.is_a?(Shop::Item::FreeStickers)
     return if user.shop_orders.joins(:shop_item).where(shop_items: { type: "ShopItem::FreeStickers" }).worth_counting.exists?
 
     errors.add(:base, "You must order the Free Stickers first before ordering other items!")
@@ -436,7 +436,7 @@ class ShopOrder < ApplicationRecord
 
   def check_devlog_for_free_stickers
     return if Rails.env.development?
-    return unless shop_item.is_a?(ShopItem::FreeStickers)
+    return unless shop_item.is_a?(Shop::Item::FreeStickers)
     return if Post.where(user: user, postable_type: "Post::Devlog").exists?
 
     errors.add(:base, "You must post at least one devlog before ordering free stickers!")
@@ -488,7 +488,7 @@ class ShopOrder < ApplicationRecord
 
   def create_refund_payout
     return unless frozen_item_price.present? && frozen_item_price > 0 && quantity.present?
-    return if shop_item.is_a?(ShopItem::FreeStickers)
+    return if shop_item.is_a?(Shop::Item::FreeStickers)
 
     user.ledger_entries.create!(
       amount: total_cost_with_modifiers,
@@ -548,7 +548,7 @@ class ShopOrder < ApplicationRecord
     user = assigned_to_user
     return unless user&.slack_id.present?
 
-    Rails.logger.info "[ShopOrder] Sending assignment notification to #{user.display_name} (#{user.slack_id})"
+    Rails.logger.info "[Shop::Order] Sending assignment notification to #{user.display_name} (#{user.slack_id})"
 
     SendSlackDmJob.perform_later(
       user.slack_id,

@@ -84,6 +84,45 @@
 #  fk_rails_...  (default_assigned_user_id => users.id) ON DELETE => nullify
 #  fk_rails_...  (user_id => users.id)
 #
-class ShopItem::Inkthreadable < ShopItem
-  # ur mom
+class Shop::Item::Accessory < Shop::Item
+  has_many :shop_item_attachments, foreign_key: :accessory_item_id, dependent: :destroy
+  has_many :parent_items, through: :shop_item_attachments, source: :parent_item
+
+  validate :must_have_attached_items_if_not_buyable_by_self
+
+  def has_tag?
+    accessory_tag.present?
+  end
+
+  def attached_shop_items
+    parent_items
+  end
+
+  def can_be_purchased_standalone?
+    buyable_by_self?
+  end
+
+  def can_attach_to?(shop_item)
+    shop_item_attachments.exists?(parent_item_id: shop_item.id)
+  end
+
+  def total_cost_with(parent_item)
+    return nil unless can_attach_to?(parent_item)
+
+    ticket_cost + parent_item.ticket_cost
+  end
+
+  def standalone_cost
+    return nil unless can_be_purchased_standalone?
+
+    ticket_cost
+  end
+
+  private
+
+  def must_have_attached_items_if_not_buyable_by_self
+    if !buyable_by_self? && parent_items.empty?
+      errors.add(:base, "must have at least one attached item when not buyable by self")
+    end
+  end
 end

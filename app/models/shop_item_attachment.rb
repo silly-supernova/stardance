@@ -20,6 +20,6 @@
 #  fk_rails_...  (parent_item_id => shop_items.id) ON DELETE => cascade
 #
 class ShopItemAttachment < ApplicationRecord
-  belongs_to :parent_item, class_name: "ShopItem"
-  belongs_to :accessory_item, class_name: "ShopItem"
+  belongs_to :parent_item, class_name: "Shop::Item"
+  belongs_to :accessory_item, class_name: "Shop::Item"
 end

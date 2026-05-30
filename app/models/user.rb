@@ -62,7 +62,7 @@ class User < ApplicationRecord
   has_many :projects, through: :memberships
   has_many :shipped_projects, -> { with_ship_events }, through: :memberships, source: :project
   has_many :hackatime_projects, class_name: "User::HackatimeProject", dependent: :destroy
-  has_many :shop_orders, dependent: :destroy
+  has_many :shop_orders, class_name: "Shop::Order", dependent: :destroy
   has_many :shop_card_grants, dependent: :destroy
   has_many :votes, dependent: :destroy
   has_many :vote_assignments, class_name: "Vote::Assignment", dependent: :destroy
@@ -88,7 +88,7 @@ class User < ApplicationRecord
   has_many :reviewed_mission_submissions, class_name: "Mission::Submission",
            foreign_key: :reviewed_by_id, dependent: :nullify
   has_many :shop_suggestions, dependent: :destroy
-  has_many :sold_items, class_name: "ShopItem::HackClubberItem", foreign_key: :user_id
+  has_many :sold_items, class_name: "Shop::Item::HackClubberItem", foreign_key: :user_id
 
   has_one_attached :banner
 

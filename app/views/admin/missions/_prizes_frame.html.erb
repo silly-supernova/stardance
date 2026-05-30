@@ -21,7 +21,7 @@
       <label>Shop item
         <%= select_tag "mission_prize[shop_item_id]",
               options_from_collection_for_select(
-                ShopItem.where(mission_prize_only: true).order(:name), :id, :name
+                Shop::Item.where(mission_prize_only: true).order(:name), :id, :name
               ),
               prompt: "Select a mission-prize-only shop item" %>
       </label>

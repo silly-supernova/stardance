@@ -30,7 +30,7 @@ class Mission::Prize < ApplicationRecord
   has_paper_trail
 
   belongs_to :mission, inverse_of: :prizes, counter_cache: true
-  belongs_to :shop_item
+  belongs_to :shop_item, class_name: "Shop::Item"
 
   validates :position, presence: true, numericality: { only_integer: true }
   validate :shop_item_must_be_prize_only

@@ -16,7 +16,7 @@ class Shop::OrdersController < Shop::BaseController
       return
     end
 
-    @shop_item = ShopItem.find(params[:shop_item_id])
+    @shop_item = Shop::Item.find(params[:shop_item_id])
     @mission_submission = load_redeemable_submission(@shop_item)
 
     unless @shop_item.enabled? || @mission_submission.present?
@@ -151,15 +151,15 @@ class Shop::OrdersController < Shop::BaseController
         return
       end
 
-      return if @shop_item.is_a?(ShopItem::FreeStickers) && !fulfill_free_stickers!
+      return if @shop_item.is_a?(Shop::Item::FreeStickers) && !fulfill_free_stickers!
 
-      if @shop_item.is_a?(ShopItem::TutorialNothing)
+      if @shop_item.is_a?(Shop::Item::TutorialNothing)
         @shop_item.fulfill!(@order)
         redirect_to shop_orders_path, notice: "Nice — that's your first order in! You're ready to ship your first project."
         return
       end
 
-      if @shop_item.is_a?(ShopItem::SillyItemType)
+      if @shop_item.is_a?(Shop::Item::SillyItemType)
         @order.approve!
         redirect_to shop_orders_path, notice: "Order placed and fulfilled!"
         return

@@ -25,7 +25,7 @@ class FulfillmentPayoutRunTest < ActiveSupport::TestCase
   setup do
     @fulfiller = User.create!(slack_id: "UPAYOUT1", display_name: "Payout Fulfiller", email: "payout@test.com")
     @admin = User.create!(slack_id: "UADMIN1", display_name: "Admin User", email: "admin@test.com", granted_roles: [ :admin ])
-    @item = ShopItem.create!(name: "Payout Item", ticket_cost: 0, type: "ShopItem::ThirdPartyPhysical", enabled: true)
+    @item = Shop::Item.create!(name: "Payout Item", ticket_cost: 0, type: "ShopItem::ThirdPartyPhysical", enabled: true)
     @buyer = User.create!(slack_id: "UBUYER2", display_name: "Buyer Two", email: "buyer2@test.com")
   end
 
@@ -47,12 +47,12 @@ class FulfillmentPayoutRunTest < ActiveSupport::TestCase
   test "reject releases orders back for next run" do
     run = create_payout_run_with_lines
     line = run.lines.first
-    order_ids = ShopOrder.where(fulfillment_payout_line: line).pluck(:id)
+    order_ids = Shop::Order.where(fulfillment_payout_line: line).pluck(:id)
 
     run.reject!
 
     assert_equal "rejected", run.aasm_state
-    assert_equal [ nil ] * order_ids.size, ShopOrder.where(id: order_ids).pluck(:fulfillment_payout_line_id)
+    assert_equal [ nil ] * order_ids.size, Shop::Order.where(id: order_ids).pluck(:fulfillment_payout_line_id)
   end
 
   test "tickets per order is 3" do
@@ -71,7 +71,7 @@ class FulfillmentPayoutRunTest < ActiveSupport::TestCase
     line = run.lines.create!(user: @fulfiller, order_count: 2, amount: 6)
 
     2.times do
-      ShopOrder.create!(
+      Shop::Order.create!(
         user: @buyer,
         shop_item: @item,
         quantity: 1,

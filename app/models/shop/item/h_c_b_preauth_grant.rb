@@ -84,6 +84,21 @@
 #  fk_rails_...  (default_assigned_user_id => users.id) ON DELETE => nullify
 #  fk_rails_...  (user_id => users.id)
 #
-class ShopItem::HCBGrant < ShopItem
+class Shop::Item::HCBPreauthGrant < Shop::Item
   include Shop::HCBGrantFulfillable
+
+  private
+
+  def grant_label = "preauth grant"
+
+  def extra_grant_options
+    {
+      pre_authorization_required: true,
+      instructions: hcb_preauthorization_instructions
+    }
+  end
+
+  def hcb_locks_changed?
+    super || saved_change_to_hcb_preauthorization_instructions?
+  end
 end

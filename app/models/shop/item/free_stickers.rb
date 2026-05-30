@@ -84,45 +84,46 @@
 #  fk_rails_...  (default_assigned_user_id => users.id) ON DELETE => nullify
 #  fk_rails_...  (user_id => users.id)
 #
-class ShopItem::Accessory < ShopItem
-  has_many :shop_item_attachments, foreign_key: :accessory_item_id, dependent: :destroy
-  has_many :parent_items, through: :shop_item_attachments, source: :parent_item
+class Shop::Item::FreeStickers < Shop::Item
+  QUEUE_ID = "stardance-tutorial-stickers"
 
-  validate :must_have_attached_items_if_not_buyable_by_self
+  def fulfill!(shop_order)
+    email   = shop_order.user&.email
+    address = shop_order.frozen_address
 
-  def has_tag?
-    accessory_tag.present?
-  end
+    if email.blank? || address.blank?
+      Rails.logger.warn(
+        "FreeStickers order #{shop_order.id} missing email or address — re-enqueuing"
+      )
 
-  def attached_shop_items
-    parent_items
-  end
+      # push to end of queue (new job)
+      FulfillShopOrderJob.perform_later(shop_order.id)
 
-  def can_be_purchased_standalone?
-    buyable_by_self?
-  end
-
-  def can_attach_to?(shop_item)
-    shop_item_attachments.exists?(parent_item_id: shop_item.id)
-  end
-
-  def total_cost_with(parent_item)
-    return nil unless can_attach_to?(parent_item)
-
-    ticket_cost + parent_item.ticket_cost
-  end
-
-  def standalone_cost
-    return nil unless can_be_purchased_standalone?
-
-    ticket_cost
-  end
-
-  private
-
-  def must_have_attached_items_if_not_buyable_by_self
-    if !buyable_by_self? && parent_items.empty?
-      errors.add(:base, "must have at least one attached item when not buyable by self")
+      return
     end
+
+    # In dev/test, pretend the queue accepted the letter so the shop
+    # walkthrough can complete end-to-end. If a Theseus API key is configured
+    # locally (e.g. devs explicitly want to exercise the live path), fall
+    # through to the real call instead.
+    if (Rails.env.development? || Rails.env.test?) && Rails.application.credentials.dig(:theseus, :api_key).blank?
+      Rails.logger.info("FreeStickers order #{shop_order.id}: dev-mode bypass (no Theseus API key configured), marking fulfilled without Theseus call")
+      shop_order.mark_fulfilled!("dev-bypass-#{shop_order.id}", nil, "System")
+      return
+    end
+
+    response = TheseusService.create_letter_v1(
+      QUEUE_ID,
+      {
+        recipient_email: email,
+        address: address,
+        idempotency_key: "stardance_tutorial_stickers_order_#{Rails.env}_#{shop_order.id}"
+      }
+    )
+
+    shop_order.mark_fulfilled!(response[:id], nil, "System")
+  rescue => e
+    Rails.logger.error "Failed to fulfill free stickers order #{shop_order.id}: #{e.message}"
+    raise
   end
 end

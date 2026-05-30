@@ -21,6 +21,6 @@
 #  fk_rails_...  (shop_order_id => shop_orders.id)
 #
 class ShopOrderModifierSelection < ApplicationRecord
-  belongs_to :shop_order
+  belongs_to :shop_order, class_name: "Shop::Order"
   belongs_to :shop_item_modifier
 end

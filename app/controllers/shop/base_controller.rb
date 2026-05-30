@@ -25,7 +25,7 @@ class Shop::BaseController < ApplicationController
 
   def load_shop_items
     excluded_free_stickers = current_user && (has_ordered_free_stickers? || current_user.shop_tutorial_completed?)
-    shop_page_data = ShopItem.cached_shop_page_data
+    shop_page_data = Shop::Item.cached_shop_page_data
     @shop_items = shop_page_data[:buyable_standalone]
     @shop_items = @shop_items.reject { |item| item.type == "ShopItem::FreeStickers" } if excluded_free_stickers
     @featured_item = featured_free_stickers_item unless excluded_free_stickers
@@ -58,12 +58,12 @@ class Shop::BaseController < ApplicationController
   end
 
   def featured_free_stickers_item
-    item = ShopItem.find_by(id: 1, type: "ShopItem::FreeStickers", enabled: true)
+    item = Shop::Item.find_by(id: 1, type: "ShopItem::FreeStickers", enabled: true)
     item if item&.enabled_in_region?(@user_region)
   end
 
   def tutorial_item?(shop_item)
-    shop_item.is_a?(ShopItem::FreeStickers) || shop_item.is_a?(ShopItem::TutorialNothing)
+    shop_item.is_a?(Shop::Item::FreeStickers) || shop_item.is_a?(Shop::Item::TutorialNothing)
   end
 
   def derive_shop_mode
@@ -76,8 +76,8 @@ class Shop::BaseController < ApplicationController
 
   def load_tutorial_items
     {
-      stickers: ShopItem::FreeStickers.where(enabled: true).first,
-      nothing:  ShopItem::TutorialNothing.where(enabled: true).first
+      stickers: Shop::Item::FreeStickers.where(enabled: true).first,
+      nothing:  Shop::Item::TutorialNothing.where(enabled: true).first
     }
   end
 

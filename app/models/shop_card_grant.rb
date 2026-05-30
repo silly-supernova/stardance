@@ -22,7 +22,7 @@
 #
 class ShopCardGrant < ApplicationRecord
   belongs_to :user
-  belongs_to :shop_item
+  belongs_to :shop_item, class_name: "Shop::Item"
 
   def hcb_data
     @hcb_data ||= HCBService.show_card_grant(hashid: hcb_grant_hashid)

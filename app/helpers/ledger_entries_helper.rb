@@ -11,7 +11,7 @@ module LedgerEntriesHelper
       else
         entry.reason
       end
-    when ShopOrder
+    when Shop::Order
       link_to entry.reason, shop_orders_path, data: { turbo_frame: "_top" }
     else
       entry.reason

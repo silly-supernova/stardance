@@ -84,21 +84,11 @@
 #  fk_rails_...  (default_assigned_user_id => users.id) ON DELETE => nullify
 #  fk_rails_...  (user_id => users.id)
 #
-class ShopItem::HCBPreauthGrant < ShopItem
-  include Shop::HCBGrantFulfillable
-
-  private
-
-  def grant_label = "preauth grant"
-
-  def extra_grant_options
-    {
-      pre_authorization_required: true,
-      instructions: hcb_preauthorization_instructions
-    }
-  end
-
-  def hcb_locks_changed?
-    super || saved_change_to_hcb_preauthorization_instructions?
+# The "nothing" choice in the shop tutorial. Price 0, fulfills instantly with
+# no real-world side effect. Used to teach a user how the shop works without
+# committing them to anything physical.
+class Shop::Item::TutorialNothing < Shop::Item
+  def fulfill!(shop_order)
+    shop_order.mark_fulfilled!(nil, nil, "System")
   end
 end

@@ -25,7 +25,7 @@ class ShopWarehousePackage < ApplicationRecord
   has_encrypted :frozen_address, type: :json
 
   belongs_to :user
-  has_many :shop_orders, foreign_key: :warehouse_package_id, dependent: :nullify
+  has_many :shop_orders, class_name: "Shop::Order", foreign_key: :warehouse_package_id, dependent: :nullify
 
   validates :frozen_address, presence: true
   validates :theseus_package_id, uniqueness: true, allow_nil: true
@@ -48,7 +48,7 @@ class ShopWarehousePackage < ApplicationRecord
       headline << order.shop_item.name
       item_contents = order.get_agh_contents
 
-      if item_contents.blank? && order.shop_item.is_a?(ShopItem::WarehouseItem)
+      if item_contents.blank? && order.shop_item.is_a?(Shop::Item::WarehouseItem)
         raise ArgumentError, "Shop item '#{order.shop_item.name}' (ID: #{order.shop_item.id}) is missing valid AGH contents. Please update the item's AGH Contents field with valid JSON."
       end
 
@@ -138,7 +138,7 @@ class ShopWarehousePackage < ApplicationRecord
   private
 
   def bonus_stickers
-    ShopItem::HC_STICKERS.shuffle.take(BONUS_STICKER_COUNT).map do |sku|
+    Shop::Item::HC_STICKERS.shuffle.take(BONUS_STICKER_COUNT).map do |sku|
       { sku:, quantity: 1 }
     end
   end

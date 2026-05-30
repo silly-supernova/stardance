@@ -35,9 +35,9 @@ class FraudDailySummaryJob < ApplicationJob
 
     top_reviewers = calculate_top_reviewers(order_versions_today, "aasm_state", %w[awaiting_periodical_fulfillment rejected on_hold fulfilled])
 
-    new_orders_today = ShopOrder.where(created_at: today).count
-    pending_orders = ShopOrder.where(aasm_state: "pending").count
-    awaiting_fulfillment = ShopOrder.where(aasm_state: "awaiting_periodical_fulfillment").count
+    new_orders_today = Shop::Order.where(created_at: today).count
+    pending_orders = Shop::Order.where(aasm_state: "pending").count
+    awaiting_fulfillment = Shop::Order.where(aasm_state: "awaiting_periodical_fulfillment").count
 
     avg_response_time = calculate_avg_response_time_orders
 
@@ -119,7 +119,7 @@ class FraudDailySummaryJob < ApplicationJob
   end
 
   def calculate_avg_response_time_orders
-    recent_orders = ShopOrder
+    recent_orders = Shop::Order
       .where(aasm_state: %w[awaiting_periodical_fulfillment rejected fulfilled])
       .where("created_at > ?", 30.days.ago)
       .limit(100)

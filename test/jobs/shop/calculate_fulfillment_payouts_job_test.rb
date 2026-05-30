@@ -8,7 +8,7 @@ class Shop::CalculateFulfillmentPayoutsJobTest < ActiveJob::TestCase
     @fulfiller2 = User.create!(slack_id: "UFULFILL2", display_name: "Fulfiller Two", email: "fulfiller2@test.com")
     @buyer = User.create!(slack_id: "UBUYER1", display_name: "Buyer One", email: "buyer1@test.com")
 
-    @item = ShopItem.create!(name: "Test Item", ticket_cost: 0, type: "ShopItem::ThirdPartyPhysical", enabled: true)
+    @item = Shop::Item.create!(name: "Test Item", ticket_cost: 0, type: "ShopItem::ThirdPartyPhysical", enabled: true)
 
     @order1 = create_fulfilled_order(@buyer, @item, @fulfiller)
     @order2 = create_fulfilled_order(@buyer, @item, @fulfiller)
@@ -63,7 +63,7 @@ class Shop::CalculateFulfillmentPayoutsJobTest < ActiveJob::TestCase
   end
 
   test "skips orders without assigned_to_user" do
-    unassigned = ShopOrder.create!(
+    unassigned = Shop::Order.create!(
       user: @buyer,
       shop_item: @item,
       quantity: 1,
@@ -82,7 +82,7 @@ class Shop::CalculateFulfillmentPayoutsJobTest < ActiveJob::TestCase
   end
 
   test "does nothing when no eligible orders" do
-    ShopOrder.update_all(aasm_state: "pending")
+    Shop::Order.update_all(aasm_state: "pending")
 
     Shop::CalculateFulfillmentPayoutsJob.perform_now
 
@@ -111,7 +111,7 @@ class Shop::CalculateFulfillmentPayoutsJobTest < ActiveJob::TestCase
   private
 
   def create_fulfilled_order(buyer, item, fulfiller, fulfilled_at: Time.current)
-    ShopOrder.create!(
+    Shop::Order.create!(
       user: buyer,
       shop_item: item,
       quantity: 1,

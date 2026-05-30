@@ -50,7 +50,7 @@ class Mission::Submission < ApplicationRecord
   belongs_to :mission,       inverse_of: :submissions
   belongs_to :reviewed_by,   class_name: "User",             optional: true
   belongs_to :chosen_prize,  class_name: "Mission::Prize",   optional: true
-  belongs_to :shop_order,                                    optional: true
+  belongs_to :shop_order, class_name: "Shop::Order",          optional: true
 
   PAYOUT_PATHS = %w[static_prize voting].freeze
 

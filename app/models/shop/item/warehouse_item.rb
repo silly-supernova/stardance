@@ -84,7 +84,7 @@
 #  fk_rails_...  (default_assigned_user_id => users.id) ON DELETE => nullify
 #  fk_rails_...  (user_id => users.id)
 #
-class ShopItem::WarehouseItem < ShopItem
+class Shop::Item::WarehouseItem < Shop::Item
   validates :agh_contents, presence: true
   validate :validate_agh_contents_format
 

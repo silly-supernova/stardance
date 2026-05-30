@@ -4,7 +4,7 @@ class Shop::ProcessLetterMailOrdersJob < ApplicationJob
   queue_as :default
 
   def perform
-    orders = ShopOrder.joins(:shop_item)
+    orders = Shop::Order.joins(:shop_item)
                       .where(shop_items: { type: "ShopItem::LetterMail" })
                       .where(aasm_state: "awaiting_periodical_fulfillment")
 

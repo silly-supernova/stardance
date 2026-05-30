@@ -16,7 +16,7 @@
 #
 class ShopSource < ApplicationRecord
   has_many :shop_item_sources, dependent: :destroy
-  has_many :shop_items, through: :shop_item_sources
+  has_many :shop_items, through: :shop_item_sources, class_name: "Shop::Item"
 
   validates :slug, :title, presence: true
   validates :slug, uniqueness: true, format: { with: /\A[a-z0-9_]+\z/, message: "must be lowercase letters, numbers, or underscores" }

@@ -1,7 +1,7 @@
 class Admin::Shop::DashboardController < Admin::ApplicationController
   def show
-    authorize ShopItem, :index?
-    @shop_items = ShopItem.order(created_at: :desc)
+    authorize Shop::Item, :index?
+    @shop_items = Shop::Item.order(created_at: :desc)
 
     if params[:search].present?
       search_term = "%#{ActiveRecord::Base.sanitize_sql_like(params[:search])}%"
@@ -20,12 +20,12 @@ class Admin::Shop::DashboardController < Admin::ApplicationController
       @shop_items = @shop_items.where(show_in_carousel: params[:carousel] == "true")
     end
 
-    @item_types = ShopItem.distinct.pluck(:type).compact.sort
+    @item_types = Shop::Item.distinct.pluck(:type).compact.sort
     @pagy, @shop_items = pagy(@shop_items)
   end
 
   def clear_carousel_cache
-    authorize ShopItem, :manage?
+    authorize Shop::Item, :manage?
     Rails.cache.delete(Cache::CarouselPrizesJob::CACHE_KEY)
     redirect_to admin_shop_path, notice: "Carousel cache cleared successfully."
   end

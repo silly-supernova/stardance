@@ -14,7 +14,7 @@ class Shop::ItemsController < Shop::BaseController
   def show
     authorize :shop
 
-    @shop_item = ShopItem.find(params[:id])
+    @shop_item = Shop::Item.find(params[:id])
     @mission_submission = load_redeemable_submission(@shop_item)
 
     if @mission_submission.nil? && @shop_item.mission_prize_only?

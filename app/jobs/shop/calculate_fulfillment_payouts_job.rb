@@ -31,7 +31,7 @@ class Shop::CalculateFulfillmentPayoutsJob < ApplicationJob
           amount: amount
         )
 
-        ShopOrder.where(id: user_orders.map(&:id)).update_all(fulfillment_payout_line_id: line.id)
+        Shop::Order.where(id: user_orders.map(&:id)).update_all(fulfillment_payout_line_id: line.id)
       end
 
       run.update!(
@@ -44,7 +44,7 @@ class Shop::CalculateFulfillmentPayoutsJob < ApplicationJob
   private
 
   def eligible_orders(manual)
-    scope = ShopOrder
+    scope = Shop::Order
       .where(aasm_state: "fulfilled")
       .where.not(assigned_to_user_id: nil)
       .where(fulfillment_payout_line_id: nil)

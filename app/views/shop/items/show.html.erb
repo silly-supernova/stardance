@@ -306,7 +306,7 @@
                 </div>
             </div>
             <% primary_address = current_user.addresses.find { |a| a["primary"] } || current_user.addresses.first %>
-            <% has_phone = primary_address&.dig("phone_number").present? || Rails.env.development? || @shop_item.is_a?(ShopItem::FreeStickers) %>
+            <% has_phone = primary_address&.dig("phone_number").present? || Rails.env.development? || @shop_item.is_a?(Shop::Item::FreeStickers) %>
             <% unless has_phone %>
               <div class="shop-order__no-phone-warning">
                 <p class="shop-order__no-phone-title">📱 Phone number required</p>

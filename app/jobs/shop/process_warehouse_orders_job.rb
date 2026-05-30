@@ -3,7 +3,7 @@
 class Shop::ProcessWarehouseOrdersJob < ApplicationJob
   queue_as :default
   def perform
-    warehouse_orders = ShopOrder
+    warehouse_orders = Shop::Order
       .joins(:shop_item)
       .where(shop_items: { type: %w[ShopItem::WarehouseItem] }).where(aasm_state: "awaiting_periodical_fulfillment", warehouse_package_id: nil)
 

@@ -1,5 +1,5 @@
 <div class="shop-item-form">
-  <%= form_with model: shop_item.becomes(ShopItem), url: (shop_item.persisted? ? admin_shop_item_path(shop_item) : admin_shop_items_path), method: (shop_item.persisted? ? :patch : :post), local: true do |f| %>
+  <%= form_with model: shop_item.becomes(Shop::Item), url: (shop_item.persisted? ? admin_shop_item_path(shop_item) : admin_shop_items_path), method: (shop_item.persisted? ? :patch : :post), local: true do |f| %>
     <% if shop_item.errors.any? %>
       <div class="shop-item-form__errors">
         <h4><%= pluralize(shop_item.errors.count, "error") %> prohibited this shop item from being saved:</h4>
@@ -412,7 +412,7 @@
               <label class="shop-item-form__label">Attached To (Shop Items)</label>
               <div class="shop-item-form__checkbox-list">
                 <% current_parent_ids = shop_item.persisted? ? shop_item.shop_item_attachments.where.not(parent_item_id: nil).pluck(:parent_item_id) : [] %>
-                <% ShopItem.where.not(type: "ShopItem::Accessory").order(:name).each do |item| %>
+                <% Shop::Item.where.not(type: "ShopItem::Accessory").order(:name).each do |item| %>
                   <label class="shop-item-form__checkbox">
                     <%= check_box_tag "shop_item[parent_item_ids][]", item.id, current_parent_ids.include?(item.id), id: "shop_item_parent_item_ids_#{item.id}" %>
                     <span><%= item.name %></span>

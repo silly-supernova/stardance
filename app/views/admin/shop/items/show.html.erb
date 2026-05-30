@@ -130,7 +130,7 @@
         </div>
       </div>
 
-      <% if @shop_item.is_a?(ShopItem::Accessory) %>
+      <% if @shop_item.is_a?(Shop::Item::Accessory) %>
         <div>
           <h3>Parent Items</h3>
           <% parent_items = @shop_item.attached_shop_items %>

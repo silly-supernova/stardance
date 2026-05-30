@@ -2,7 +2,7 @@ module User::ShopAccess
   # this needs more work
   extend ActiveSupport::Concern
 
-  def seller? = ShopItem::HackClubberItem.exists?(user_id: id)
+  def seller? = Shop::Item::HackClubberItem.exists?(user_id: id)
 
   def has_regions?
     regions.present? && regions.any?

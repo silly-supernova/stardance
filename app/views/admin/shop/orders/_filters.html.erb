@@ -9,7 +9,7 @@
 
       <div>
         <%= f.label :shop_item_id, "Item" %>
-        <%= f.select :shop_item_id, options_from_collection_for_select(ShopItem.order(:name), :id, :name, params[:shop_item_id]),
+        <%= f.select :shop_item_id, options_from_collection_for_select(Shop::Item.order(:name), :id, :name, params[:shop_item_id]),
             { prompt: "All items" } %>
       </div>
 

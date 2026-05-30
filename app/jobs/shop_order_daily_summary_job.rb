@@ -28,7 +28,7 @@ class ShopOrderDailySummaryJob < ApplicationJob
   }.freeze
 
   def build_message
-    awaiting_orders = ShopOrder.where(aasm_state: "awaiting_periodical_fulfillment").real
+    awaiting_orders = Shop::Order.where(aasm_state: "awaiting_periodical_fulfillment").real
     awaiting_with_items = awaiting_orders.joins(:shop_item)
 
     assigned_breakdown = awaiting_orders
@@ -42,7 +42,7 @@ class ShopOrderDailySummaryJob < ApplicationJob
     long_awaiting = awaiting_orders.where("shop_orders.awaiting_periodical_fulfillment_at < ?", 48.hours.ago)
     oldest_awaiting = awaiting_orders.order(:awaiting_periodical_fulfillment_at).first
 
-    fulfilled_today = ShopOrder.real.where(aasm_state: "fulfilled", fulfilled_at: Time.current.beginning_of_day..Time.current.end_of_day).count
+    fulfilled_today = Shop::Order.real.where(aasm_state: "fulfilled", fulfilled_at: Time.current.beginning_of_day..Time.current.end_of_day).count
     total = awaiting_orders.count
     leaderboard = daily_leaderboard
 

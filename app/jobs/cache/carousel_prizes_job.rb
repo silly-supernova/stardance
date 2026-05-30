@@ -19,7 +19,7 @@ class Cache::CarouselPrizesJob < ApplicationJob
   private
 
   def build_prizes_data
-    ShopItem.with_attached_image
+    Shop::Item.with_attached_image
             .shown_in_carousel
             .order(:ticket_cost)
             .select { |prize| prize.image.attached? }

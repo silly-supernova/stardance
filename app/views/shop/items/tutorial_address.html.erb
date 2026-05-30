@@ -21,7 +21,7 @@
       <h1 class="shop-checkout__item-name"><%= @shop_item.name %></h1>
       <p class="shop-checkout__item-description"><%= @shop_item.description %></p>
 
-      <% if @shop_item.is_a?(ShopItem::TutorialNothing) %>
+      <% if @shop_item.is_a?(Shop::Item::TutorialNothing) %>
         <p class="shop-checkout__item-note">No shipment, no Stardust spent — this just shows you how checkout works.</p>
       <% else %>
         <div class="shop-checkout__item-meta">

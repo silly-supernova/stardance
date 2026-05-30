@@ -10,7 +10,7 @@ class Shop::ProcessVerifiedOrdersJob < ApplicationJob
     orders = user.shop_orders.where(aasm_state: "awaiting_verification")
     orders.find_each do |order|
       begin
-        if order.shop_item.is_a?(ShopItem::FreeStickers)
+        if order.shop_item.is_a?(Shop::Item::FreeStickers)
           order.shop_item.fulfill!(order)
           order.mark_stickers_received
         else

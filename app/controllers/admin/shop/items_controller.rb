@@ -9,11 +9,11 @@ class Admin::Shop::ItemsController < Admin::ApplicationController
     end
 
     def new
-      authorize ShopItem, :new?
+      authorize Shop::Item, :new?
       @shop_item = if params[:type].present? && available_shop_item_types.include?(params[:type])
         available_shop_item_types.find { |t| t == params[:type] }.constantize.new
       else
-        ShopItem.new
+        Shop::Item.new
       end
       if shop_manager?
         @shop_item.draft = true
@@ -24,7 +24,7 @@ class Admin::Shop::ItemsController < Admin::ApplicationController
     end
 
     def create
-      @shop_item = ShopItem.new(shop_manager? ? draft_shop_item_params : shop_item_params)
+      @shop_item = Shop::Item.new(shop_manager? ? draft_shop_item_params : shop_item_params)
       authorize @shop_item, :create?
 
       if shop_manager?
@@ -79,7 +79,7 @@ class Admin::Shop::ItemsController < Admin::ApplicationController
     end
 
     def preview_markdown
-      authorize ShopItem, :show?
+      authorize Shop::Item, :show?
       markdown = params[:markdown].to_s
       html = markdown.present? ? MarkdownRenderer.render(markdown) : ""
       render plain: html
@@ -130,7 +130,7 @@ class Admin::Shop::ItemsController < Admin::ApplicationController
     end
 
     def set_shop_item
-      @shop_item = ShopItem.find(params[:id])
+      @shop_item = Shop::Item.find(params[:id])
     end
 
     def set_shop_item_types

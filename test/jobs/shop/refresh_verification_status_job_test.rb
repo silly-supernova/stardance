@@ -44,7 +44,7 @@ class Shop::RefreshVerificationStatusJobTest < ActiveJob::TestCase
   private
 
   def create_awaiting_verification_order(user)
-    item = ShopItem.create!(
+    item = Shop::Item.create!(
       name: "Test Item #{SecureRandom.hex(4)}",
       ticket_cost: 0,
       type: "ShopItem::ThirdPartyPhysical",

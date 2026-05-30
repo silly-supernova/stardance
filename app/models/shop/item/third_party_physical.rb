@@ -84,11 +84,5 @@
 #  fk_rails_...  (default_assigned_user_id => users.id) ON DELETE => nullify
 #  fk_rails_...  (user_id => users.id)
 #
-# The "nothing" choice in the shop tutorial. Price 0, fulfills instantly with
-# no real-world side effect. Used to teach a user how the shop works without
-# committing them to anything physical.
-class ShopItem::TutorialNothing < ShopItem
-  def fulfill!(shop_order)
-    shop_order.mark_fulfilled!(nil, nil, "System")
-  end
+class Shop::Item::ThirdPartyPhysical < Shop::Item
 end

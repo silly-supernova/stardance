@@ -28,5 +28,5 @@ class FulfillmentPayoutLine < ApplicationRecord
   belongs_to :fulfillment_payout_run
   belongs_to :user
 
-  has_many :shop_orders, dependent: :nullify
+  has_many :shop_orders, class_name: "Shop::Order", dependent: :nullify
 end

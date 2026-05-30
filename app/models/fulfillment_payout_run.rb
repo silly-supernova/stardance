@@ -63,6 +63,6 @@ class FulfillmentPayoutRun < ApplicationRecord
   end
 
   def release_orders!
-    ShopOrder.where(fulfillment_payout_line: lines).update_all(fulfillment_payout_line_id: nil)
+    Shop::Order.where(fulfillment_payout_line: lines).update_all(fulfillment_payout_line_id: nil)
   end
 end

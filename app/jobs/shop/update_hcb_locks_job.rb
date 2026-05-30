@@ -4,8 +4,8 @@ class Shop::UpdateHCBLocksJob < ApplicationJob
   queue_as :latency_10s
 
   def perform(shop_item_id)
-    shop_item = ShopItem.find(shop_item_id)
-    return unless shop_item.is_a?(ShopItem::HCBGrant) || shop_item.is_a?(ShopItem::HCBPreauthGrant)
+    shop_item = Shop::Item.find(shop_item_id)
+    return unless shop_item.is_a?(Shop::Item::HCBGrant) || shop_item.is_a?(Shop::Item::HCBPreauthGrant)
 
     shop_item.shop_card_grants.each do |grant|
       next unless grant.hcb_grant_hashid
@@ -21,7 +21,7 @@ class Shop::UpdateHCBLocksJob < ApplicationJob
           purpose: shop_item.name
         }
 
-        if shop_item.is_a?(ShopItem::HCBPreauthGrant)
+        if shop_item.is_a?(Shop::Item::HCBPreauthGrant)
           update_params[:instructions] = shop_item.hcb_preauthorization_instructions
         end
 

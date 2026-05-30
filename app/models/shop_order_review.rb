@@ -24,7 +24,7 @@
 class ShopOrderReview < ApplicationRecord
   has_paper_trail
 
-  belongs_to :shop_order
+  belongs_to :shop_order, class_name: "Shop::Order"
   belongs_to :user
 
   VERDICTS = %w[approve reject].freeze

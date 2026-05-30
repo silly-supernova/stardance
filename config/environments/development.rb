@@ -9,7 +9,7 @@ Rails.application.configure do
     Bullet.rails_logger  = true
     Bullet.add_footer    = true
 
-    # ActiveStorage::Attachment#record is the polymorphic owner (e.g. ShopItem
+    # ActiveStorage::Attachment#record is the polymorphic owner (e.g. Shop::Item
     # itself). When we render attachment URLs, Rails reaches back from
     # attachment → record, and Bullet flags it as an N+1 even though the
     # records are already in memory. Adding :record to the preload chain is

@@ -38,7 +38,7 @@
 class ShopItemModifier < ApplicationRecord
   include Shop::Regionalizable
 
-  belongs_to :shop_item
+  belongs_to :shop_item, class_name: "Shop::Item"
   has_one_attached :image
   has_many :shop_order_modifier_selections, dependent: :destroy
 
