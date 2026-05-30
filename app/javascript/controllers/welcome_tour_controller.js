@@ -40,6 +40,8 @@ export default class extends Controller {
     this._onKey = this._onKey.bind(this);
     this._onDocumentClick = this._onDocumentClick.bind(this);
 
+    this._onOverlayClick = this._onOverlayClick.bind(this);
+
     window.addEventListener("resize", this._onReflow);
     window.addEventListener("scroll", this._onReflow, { passive: true });
     document.addEventListener("keydown", this._onKey);
@@ -48,6 +50,9 @@ export default class extends Controller {
     // dismiss the tour, which still records the server-side dismissal.
     this._onExternalDismiss = () => this.finish();
     document.addEventListener("welcome-tour:dismiss", this._onExternalDismiss);
+
+    const overlay = this.element.querySelector(".welcome-tour__overlay");
+    if (overlay) overlay.addEventListener("click", this._onOverlayClick);
 
     if (this.lockScrollValue) {
       this._previousOverflow = document.body.style.overflow;
@@ -62,6 +67,8 @@ export default class extends Controller {
 
   disconnect() {
     this._clearAutoAdvance();
+    const overlay = this.element.querySelector(".welcome-tour__overlay");
+    if (overlay) overlay.removeEventListener("click", this._onOverlayClick);
     window.removeEventListener("resize", this._onReflow);
     window.removeEventListener("scroll", this._onReflow);
     document.removeEventListener("keydown", this._onKey);
@@ -128,6 +135,13 @@ export default class extends Controller {
     }
   }
 
+  _onOverlayClick() {
+    const step = this.stepsValue[this.stepValue];
+    if (step?.clickToAdvance) return;
+    if (!this.dismissThingValue) return;
+    this.finish();
+  }
+
   _onReflow() {
     this._render();
   }
@@ -138,7 +152,7 @@ export default class extends Controller {
     // them skip past it with Escape or arrow keys.
     if (step?.clickToAdvance) return;
 
-    if (event.key === "Escape") {
+    if (event.key === "Escape" && this.dismissThingValue) {
       this.finish();
     } else if (event.key === "ArrowRight") {
       this.next();
@@ -231,9 +245,10 @@ export default class extends Controller {
 
     const pad = step.padding ?? 12;
     const rect = target.getBoundingClientRect();
+    const vh = window.innerHeight;
 
     let top = rect.top - pad;
-    const bottom = rect.bottom + pad;
+    let bottom = rect.bottom + pad;
 
     if (step.excludeTop) {
       const excluded = this._findTarget(step.excludeTop);
@@ -242,6 +257,11 @@ export default class extends Controller {
         const floor = excludedRect.bottom + (step.excludeGap ?? 0);
         if (floor > top) top = floor;
       }
+    }
+
+    if (!this.lockScrollValue) {
+      top = Math.max(top, 0);
+      bottom = Math.min(bottom, vh);
     }
 
     const left = rect.left - pad;
@@ -448,9 +468,7 @@ export default class extends Controller {
     let resolved = placement;
     if (placement === "right" && !fitsRight) {
       if (canShrinkRight) resolved = "right-shrink";
-      else if (fitsLeft) resolved = "left";
-      else if (canShrinkLeft) resolved = "left-shrink";
-      else resolved = "below";
+      else resolved = "right-force";
     }
     if (placement === "left" && !fitsLeft) {
       if (canShrinkLeft) resolved = "left-shrink";
@@ -477,6 +495,9 @@ export default class extends Controller {
     } else if (resolved === "above") {
       appliedWidth = naturalWidth;
       tooltipLeft = left + width / 2 - appliedWidth / 2;
+    } else if (resolved === "right-force") {
+      appliedWidth = Math.min(naturalWidth, vw / 3);
+      tooltipLeft = vw - appliedWidth - margin * 2;
     } else {
       // right or right-shrink
       appliedWidth = resolved === "right-shrink" ? roomRight : naturalWidth;
@@ -502,7 +523,7 @@ export default class extends Controller {
       }
     }
 
-    this._lastResolvedPlacement = resolved.replace("-shrink", "");
+    this._lastResolvedPlacement = resolved.replace(/-shrink|-force/, "");
 
     if (tooltipLeft < margin) tooltipLeft = margin;
     if (tooltipLeft + finalRect.width + margin > vw) {

@@ -6,6 +6,36 @@
   min-height: 100vh;
 }
 
+// "ada@example.com · Log out" strip pinned to the bottom-left corner so users
+// aren't trapped in the wizard. Subtle enough not to distract.
+.onboarding-escape {
+  bottom: 1rem;
+  color: rgba(255, 255, 255, 0.45);
+  font-family: "Exo 2", sans-serif;
+  font-size: 0.8rem;
+  left: 1.25rem;
+  position: fixed;
+  z-index: 10;
+
+  &__email {
+    font-weight: 500;
+  }
+
+  &__sep {
+    margin: 0 0.3em;
+  }
+
+  &__link {
+    color: rgba(255, 255, 255, 0.55);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+
+    &:hover {
+      color: rgba(255, 255, 255, 0.85);
+    }
+  }
+}
+
 // Shared animated background rendered by the onboarding layout. Lives behind
 // every wizard step except welcome + complete, which have their own elaborate
 // planet-based backgrounds.
@@ -603,6 +633,32 @@ $slider-star: url("onboarding/star-radio-active.svg");
   &:focus-visible::-webkit-slider-thumb,
   &:focus-visible::-moz-range-thumb {
     filter: drop-shadow(0 0 6px rgba(244, 235, 185, 0.9));
+  }
+}
+
+@keyframes slider-jiggle {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px) rotate(-3deg); }
+  40% { transform: translateX(5px) rotate(2deg); }
+  60% { transform: translateX(-3px) rotate(-1deg); }
+  80% { transform: translateX(2px); }
+}
+
+.onboarding-experience__slider.jiggle {
+  &::-webkit-slider-thumb {
+    animation: slider-jiggle 0.5s ease;
+  }
+  &::-moz-range-thumb {
+    animation: slider-jiggle 0.5s ease;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .onboarding-experience__slider.jiggle {
+    &::-webkit-slider-thumb,
+    &::-moz-range-thumb {
+      animation: none;
+    }
   }
 }
 

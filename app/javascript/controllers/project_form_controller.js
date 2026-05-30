@@ -275,9 +275,6 @@ export default class extends Controller {
 
   async detectReadme() {
     if (!this.hasRepoUrlTarget || !this.hasReadmeUrlTarget) return;
-    if (this.userEditedReadme && !this.readmeUrlTarget.dataset.autofilled) {
-      return;
-    }
 
     const repoValue = (this.repoUrlTarget.value || "").trim();
     if (!repoValue) return;
@@ -319,10 +316,7 @@ export default class extends Controller {
       return;
     }
 
-    if (
-      !this.readmeUrlTarget.value ||
-      this.readmeUrlTarget.dataset.autofilled
-    ) {
+    if (!this.userEditedReadme) {
       this.readmeUrlTarget.value = readmeUrl;
       this.readmeUrlTarget.dataset.autofilled = "true";
       this.userEditedReadme = false;
@@ -371,12 +365,36 @@ export default class extends Controller {
   restoreReadmeState() {
     if (!this.hasReadmeUrlTarget) return;
 
-    const hasValue = (this.readmeUrlTarget.value || "").trim().length > 0;
-    if (hasValue) this.showReadme();
+    const readmeValue = (this.readmeUrlTarget.value || "").trim();
+    if (readmeValue) this.showReadme();
 
     const autofilled = this.readmeUrlTarget.dataset.autofilled === "true";
-    this.userEditedReadme = hasValue && !autofilled;
-    this.setReadmeLocked(autofilled);
+    const derivedFromRepo = this.readmeDerivedFromRepo(readmeValue);
+    this.userEditedReadme = readmeValue.length > 0 && !autofilled && !derivedFromRepo;
+    this.setReadmeLocked(autofilled || derivedFromRepo);
+  }
+
+  readmeDerivedFromRepo(readmeValue) {
+    if (!readmeValue || !this.hasRepoUrlTarget) return false;
+
+    const repoValue = (this.repoUrlTarget.value || "").trim();
+    if (!repoValue) return false;
+
+    let url;
+    try { url = new URL(repoValue); } catch { return false; }
+
+    const host = url.host.toLowerCase();
+    const [, owner, rawRepo] = (url.pathname || "").split("/");
+    if (!owner || !rawRepo) return false;
+
+    const repo = rawRepo.replace(/\.git$/i, "");
+
+    if (host === "github.com") {
+      return readmeValue.includes(`raw.githubusercontent.com/${owner}/${repo}/`);
+    } else if (host === "gitlab.com") {
+      return readmeValue.includes(`gitlab.com/${owner}/${repo}/`);
+    }
+    return false;
   }
 
   showReadme() {

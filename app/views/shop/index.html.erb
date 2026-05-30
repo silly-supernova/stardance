@@ -14,12 +14,6 @@
 
   <% tutorial_active = @shop_mode == :tutorial && @tutorial_items.values.all?(&:present?) %>
   <% pick_ids = tutorial_active ? @tutorial_items.values.compact.map(&:id) : [] %>
-  <%# Once a user has verified IDV but still owes the address step, re-show the
-      picks intro spotlight regardless of prior dismissal — the picks now lead
-      to the address screen instead of the IDV modal, so it's a fresh "next
-      step" cue rather than a repeat of the original one. %>
-  <% post_verify_address_step = tutorial_active && current_user && current_user.identity_verified? && current_user.addresses.empty? %>
-  <% show_picks_intro = tutorial_active && current_user && (!current_user.has_dismissed?("shop_picks_intro") || post_verify_address_step) %>
 
   <% if tutorial_active %>
     <section class="shop-hub__tutorial-card" aria-label="Shop tutorial">
@@ -46,17 +40,10 @@
               <%= inline_svg_tag "icons/tour-arrow.svg", class: "shop-hub__picks-cue-arrow", aria: { hidden: true }, focusable: false %>
               <span class="shop-hub__picks-cue-text">Choose one to go through the tutorial.</span>
             </span>
-            <% unless current_user&.has_dismissed?("shop_picks_intro") %>
-              <button type="button"
-                      class="shop-hub__picks-cue-dismiss"
-                      onclick="document.dispatchEvent(new CustomEvent('welcome-tour:dismiss')); this.remove()">Ok, I'll do it!</button>
-            <% end %>
           </li>
         </ul>
       </div>
-      <% if show_picks_intro %>
-        <%= render "shop/picks_intro_tour" %>
-      <% end %>
+      <%# picks_intro_tour overlay removed — the inline cue is clear enough %>
     </section>
   <% end %>
 

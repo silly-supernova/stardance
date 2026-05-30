@@ -1,31 +1,15 @@
 class Projects::ShipsController < ApplicationController
   before_action :set_project
-  before_action :setup_chrome,    only: [ :new, :compose, :create ]
-  before_action :require_shippable, only: [ :compose, :create ]
-
-  # Step 0 — "what is a ship" refresher (video only). Entry point.
-  def new
-    authorize @project, :ship?
-    @step = 0
-  end
-
-  # Step 1 — ship composer (the only real step). Writing the ship post,
-  # acknowledging mission requirements, and shipping all happen here.
-  # Requires the project to be shippable (handled by the before_action).
-  def compose
-    authorize @project, :ship?
-    @step = 1
-    @last_ship = @project.last_ship_event
-  end
+  before_action :require_shippable, only: [ :create ]
 
   def create
     authorize @project, :ship?
-    # Everything posts from the single ship page, so read straight from params.
+    # Everything posts from the modal on the project show page.
     mission_payout_path = params[:mission_payout_path]
     submission_guide_ack = params[:mission_submission_guide_acknowledged].to_s == "1"
 
     if mission_submission_guide_ack_required? && !submission_guide_ack
-      redirect_to compose_project_ships_path(@project),
+      redirect_to project_path(@project),
                   alert: "Read and acknowledge the mission submission guide before shipping." and return
     end
 
@@ -69,7 +53,7 @@ class Projects::ShipsController < ApplicationController
       redirect_to project_path(@project), notice: "We couldn't reach your links. Make sure they're online and public, then submit again!"
     end
   rescue ActiveRecord::RecordInvalid => e
-    redirect_back fallback_location: new_project_ships_path(@project), alert: e.record.errors.full_messages.to_sentence
+    redirect_back fallback_location: project_path(@project), alert: e.record.errors.full_messages.to_sentence
   end
 
   private
@@ -77,24 +61,13 @@ class Projects::ShipsController < ApplicationController
       @project = Project.find(params[:project_id])
     end
 
-    # Shared chrome state for every wizard step: hide the global sidebar and
-    # apply the ship-page body class so the layout knows we're in the wizard.
-    def setup_chrome
-      @hide_sidebar = true
-      @body_class = "ship-page"
-    end
-
-    # The review/ship steps can only be reached once the project meets every
-    # shipping requirement. If a user lands on those URLs early (typed-in URL,
-    # stale bookmark, mid-flow regression), bounce them back to the project
-    # page, where project info is completed and remaining requirements surface.
     def require_shippable
       return if @project.shippable?
       redirect_to project_path(@project), alert: "Finish the remaining requirements before shipping."
     end
 
-    def initial_ship?
-      @project.posts.where(postable_type: "Post::ShipEvent").one?
+    def had_prior_ship_event?
+      @project.posts.where(postable_type: "Post::ShipEvent").exists?
     end
 
     def mission_submission_guide_ack_required?
@@ -108,12 +81,10 @@ class Projects::ShipsController < ApplicationController
       return unless attachment
 
       mission = attachment.mission
-      # Only the first ship to a mission counts; later ships are regular ships.
       return if @project.shipped_to_mission?(mission)
       payout_path = resolve_payout_path(mission, payout_path_param)
       ack_time = (submission_guide_acknowledged && mission.submission_guide.present?) ? Time.current : nil
 
-      # Don't pass status — AASM defaults it and rejects direct assignment.
       Mission::Submission.create!(
         ship_event: ship_event,
         mission: mission,
