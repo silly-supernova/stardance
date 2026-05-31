@@ -69,10 +69,8 @@
           <li class="shop-hub__items-card">
             <%= render "shop/items/item_card",
                   item: item,
-                  mode: :preview,
                   region: @user_region,
                   balance: 0,
-                  tutorial_item_ids: [],
                   spotlight: false %>
           </li>
         <% end %>

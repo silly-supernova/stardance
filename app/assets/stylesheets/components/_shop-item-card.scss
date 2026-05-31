@@ -274,13 +274,6 @@
     }
   }
 
-  &--non-interactive {
-    filter: saturate(0.5);
-    opacity: 0.55;
-    pointer-events: none;
-    user-select: none;
-  }
-
   &--out-of-stock {
     .shop-item-card__order-cta {
       display: none;
