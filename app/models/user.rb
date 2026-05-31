@@ -181,6 +181,8 @@ class User < ApplicationRecord
   include User::Preferences
   include User::UsernameBloomSync
 
+  after_create_commit :broadcast_signup_counter, if: -> { Flipper.enabled?(:new_onboarding) }
+
   KERBAL_FIRST_NAMES = %w[
     Jebediah Bill Bob Valentina Lodwig Shepard Gus Wernher Gene
     Mortimer Linus Genekin Bobnik Billard Valentik Aldler Orlas
@@ -217,6 +219,17 @@ class User < ApplicationRecord
   end
 
   private
+
+  def broadcast_signup_counter
+    Rails.cache.increment("landing/signup_count")
+    unless Rails.cache.exist?("landing/signup_broadcast_lock")
+      Rails.cache.write("landing/signup_broadcast_lock", true, expires_in: 1.second)
+      SignupCounterBroadcastJob.set(wait: 1.second).perform_later
+    end
+  rescue StandardError => e
+    Rails.logger.warn("[User#broadcast_signup_counter] #{e.class}: #{e.message}")
+    Sentry.capture_exception(e) if defined?(Sentry)
+  end
 
   def interests_must_be_allowed
     return if interests.blank?

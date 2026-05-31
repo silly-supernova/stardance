@@ -29,10 +29,18 @@ class LandingController < ApplicationController
 
   def prepare_landing_page_state
     @new_onboarding = Flipper.enabled?(:new_onboarding)
-    @rsvp_count = cached_rsvp_count unless @new_onboarding
+    if @new_onboarding
+      @signup_count = cached_signup_count
+    else
+      @rsvp_count = cached_rsvp_count
+    end
   end
 
   def cached_rsvp_count
     Rails.cache.fetch("landing/rsvp_count", expires_in: 30.seconds) { Rsvp.count }
+  end
+
+  def cached_signup_count
+    Rails.cache.fetch("landing/signup_count", expires_in: 30.seconds) { User.count }
   end
 end

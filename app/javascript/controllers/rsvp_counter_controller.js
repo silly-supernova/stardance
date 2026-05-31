@@ -1,10 +1,9 @@
 import { Controller } from "@hotwired/stimulus";
 
-// Intercepts the Turbo Stream replace targeting #rsvp_counter and crossfades
-// the number: the old number slides up and fades out, the new one slides in
-// from below and fades in. The exiting number stays in normal flow so the
-// counter's box keeps its size and baseline — the entering number is
-// absolutely stacked on top, so it doesn't disturb surrounding text.
+// Odometer-style counter: each digit animates independently. When the
+// count jumps by more than 1 (batched broadcasts), intermediate values
+// are queued and ticked through with faster, jittered timing so bursts
+// of signups look organic rather than a single jump.
 export default class extends Controller {
   connect() {
     this.prefersReducedMotion =
@@ -13,10 +12,11 @@ export default class extends Controller {
     this.span = this.element.querySelector("#rsvp_counter");
     if (!this.span) return;
 
-    this.lastCount = parseInt(this.span.dataset.count, 10) || 0;
+    this.currentCount = parseInt(this.span.dataset.count, 10) || 0;
     this.animating = false;
     this.queue = [];
-    this.build(this.span.textContent.trim());
+    this.tickDuration = null;
+    this.buildDigits(this.currentCount);
 
     this._onStream = this.onStream.bind(this);
     document.addEventListener("turbo:before-stream-render", this._onStream);
@@ -26,14 +26,31 @@ export default class extends Controller {
     document.removeEventListener("turbo:before-stream-render", this._onStream);
   }
 
-  build(text) {
+  formatNumber(n) {
+    return n.toLocaleString();
+  }
+
+  buildDigits(count) {
+    const text = this.formatNumber(count);
     this.span.textContent = "";
     this.span.setAttribute("aria-label", text);
-    const inner = document.createElement("span");
-    inner.className = "rsvp-counter__inner";
-    inner.textContent = text;
-    this.span.appendChild(inner);
-    this.currentInner = inner;
+    this.span.dataset.count = count;
+    this.digitEls = [];
+
+    for (const ch of text) {
+      const wrapper = document.createElement("span");
+      wrapper.className = /\d/.test(ch)
+        ? "rsvp-counter__digit"
+        : "rsvp-counter__sep";
+
+      const inner = document.createElement("span");
+      inner.className = "rsvp-counter__digit-inner";
+      inner.textContent = ch;
+      wrapper.appendChild(inner);
+
+      this.span.appendChild(wrapper);
+      this.digitEls.push({ wrapper, inner, value: ch });
+    }
   }
 
   onStream(event) {
@@ -45,69 +62,129 @@ export default class extends Controller {
     if (!incoming) return;
 
     const newCount = parseInt(incoming.dataset.count, 10);
-    if (Number.isNaN(newCount)) return;
-    const newText = incoming.textContent.trim();
+    if (Number.isNaN(newCount) || newCount === this.currentCount) return;
 
     event.preventDefault();
 
-    if (newCount === this.lastCount) return;
-
-    if (newCount < this.lastCount) {
-      this.lastCount = newCount;
-      this.build(newText);
+    if (newCount < this.currentCount) {
+      this.currentCount = newCount;
+      this.buildDigits(newCount);
       return;
     }
 
-    this.lastCount = newCount;
-    this.enqueue(newText);
-  }
+    const oldCount = this.currentCount;
+    this.currentCount = newCount;
 
-  enqueue(newText) {
-    if (this.animating) {
-      this.queue.push(newText);
+    const delta = newCount - oldCount;
+    if (delta <= 1) {
+      this.tickDuration = null;
+      this.enqueue(newCount);
     } else {
-      this.animate(newText);
+      const maxTicks = Math.min(delta, 20);
+      this.tickDuration = Math.max(80, Math.floor(1000 / maxTicks));
+      const step = delta / maxTicks;
+      for (let i = 1; i <= maxTicks; i++) {
+        this.enqueue(Math.round(oldCount + step * i));
+      }
     }
   }
 
-  animate(newText) {
-    this.animating = true;
-    this.pulse();
+  enqueue(count) {
+    if (this.animating) {
+      this.queue.push(count);
+    } else {
+      this.animateToCount(count);
+    }
+  }
 
-    if (this.prefersReducedMotion) {
-      this.build(newText);
+  animateToCount(count) {
+    this.animating = true;
+
+    const newText = this.formatNumber(count);
+    const oldText = this.digitEls.map((d) => d.value).join("");
+
+    if (newText.length !== oldText.length) {
+      this.buildDigits(count);
+      this.pulse();
       this.animating = false;
       this.drain();
       return;
     }
 
-    const oldInner = this.currentInner;
-    oldInner.classList.add("rsvp-counter__inner--exiting");
+    const base = this.tickDuration || 680;
+    const jitter = this.tickDuration ? base * (0.5 + Math.random()) : base;
+    const duration = Math.round(jitter);
 
-    const newInner = document.createElement("span");
-    newInner.className = "rsvp-counter__inner rsvp-counter__inner--entering";
-    newInner.textContent = newText;
-    this.span.appendChild(newInner);
+    const animations = [];
+    for (let i = 0; i < newText.length; i++) {
+      if (newText[i] !== this.digitEls[i].value) {
+        animations.push(this.animateDigit(this.digitEls[i], newText[i], duration));
+      }
+    }
 
-    // Wait for the entering animation to finish; the exiting one has the
-    // same duration so its cleanup rides along.
-    newInner.addEventListener(
-      "animationend",
-      () => {
-        oldInner.remove();
-        newInner.classList.remove("rsvp-counter__inner--entering");
-        this.span.setAttribute("aria-label", newText);
-        this.currentInner = newInner;
-        this.animating = false;
-        this.drain();
-      },
-      { once: true },
-    );
+    if (animations.length === 0) {
+      this.animating = false;
+      this.drain();
+      return;
+    }
+
+    this.pulse();
+
+    if (this.prefersReducedMotion) {
+      this.span.setAttribute("aria-label", newText);
+      this.span.dataset.count = count;
+      this.animating = false;
+      if (this.queue.length === 0) this.tickDuration = null;
+      this.drain();
+      return;
+    }
+
+    Promise.all(animations).then(() => {
+      this.span.setAttribute("aria-label", newText);
+      this.span.dataset.count = count;
+      this.animating = false;
+      if (this.queue.length === 0) this.tickDuration = null;
+      this.drain();
+    });
+  }
+
+  animateDigit(digitObj, newValue, duration) {
+    if (this.prefersReducedMotion) {
+      digitObj.inner.textContent = newValue;
+      digitObj.value = newValue;
+      return Promise.resolve();
+    }
+
+    return new Promise((resolve) => {
+      const oldInner = digitObj.inner;
+      oldInner.classList.add("rsvp-counter__digit-inner--exiting");
+      oldInner.style.animationDuration = `${duration}ms`;
+
+      const newInner = document.createElement("span");
+      newInner.className =
+        "rsvp-counter__digit-inner rsvp-counter__digit-inner--entering";
+      newInner.textContent = newValue;
+      newInner.style.animationDuration = `${duration}ms`;
+      digitObj.wrapper.appendChild(newInner);
+
+      newInner.addEventListener(
+        "animationend",
+        () => {
+          oldInner.remove();
+          newInner.classList.remove("rsvp-counter__digit-inner--entering");
+          newInner.style.animationDuration = "";
+          digitObj.inner = newInner;
+          digitObj.value = newValue;
+          resolve();
+        },
+        { once: true },
+      );
+    });
   }
 
   drain() {
     if (this.queue.length > 0) {
-      this.animate(this.queue.shift());
+      this.animateToCount(this.queue.shift());
     }
   }
 
