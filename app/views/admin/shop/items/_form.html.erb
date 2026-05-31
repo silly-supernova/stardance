@@ -77,6 +77,17 @@
               </div>
             <% end %>
           </div>
+
+          <div class="shop-item-form__field">
+            <label class="shop-item-form__label">Categories</label>
+            <%= f.collection_check_boxes :shop_category_ids, @shop_categories, :id, :title do |b| %>
+              <label class="shop-item-form__checkbox-label">
+                <%= b.check_box(class: "shop-item-form__checkbox") %>
+                <%= b.text %>
+              </label>
+            <% end %>
+            <span class="shop-item-form__hint">Assign this item to one or more shop categories</span>
+          </div>
         </div>
 
         <div class="card">

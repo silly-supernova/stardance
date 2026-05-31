@@ -57,6 +57,7 @@
            <th></th>
            <th>Name</th>
            <th>Type</th>
+           <th>Categories</th>
            <th>Stardust Cost</th>
            <th>USD Cost</th>
            <th>Regions</th>
@@ -79,6 +80,10 @@
              </td>
              <td><%= item.name %></td>
              <td><span><%= item.type.to_s.gsub("ShopItem::", "") %></span></td>
+             <td>
+               <% cats = item.shop_categories %>
+               <%= cats.any? ? cats.map(&:title).join(", ") : "—" %>
+             </td>
              <td><%= stardust_icon %> <%= item.ticket_cost.to_i %></td>
              <td><%= item.usd_cost ? number_to_currency(item.usd_cost) : "—" %></td>
              <td>
