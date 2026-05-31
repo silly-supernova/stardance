@@ -92,6 +92,35 @@ module SemanticSearch
       false
     end
 
+    def upsert_batch(records, batch_size: 100)
+      return 0 unless enabled? && ensure_index!
+
+      indexed = 0
+
+      records.each_slice(batch_size) do |batch|
+        docs = batch.filter_map { |record| Document.for(record) }.select(&:indexable?)
+        next if docs.empty?
+
+        vectors = embed_many(docs.map(&:search_text))
+        next if vectors.blank?
+
+        redis.pipelined do |pipe|
+          docs.zip(vectors).each do |doc, vector|
+            next if vector.blank?
+            pipe.mapped_hmset(doc.redis_key, doc.to_redis_hash.merge("embedding" => pack_vector(vector)))
+            indexed += 1
+          end
+        end
+      end
+
+      clear_result_cache
+      indexed
+    rescue StandardError => e
+      handle_redis_error(:upsert_batch, 0, e) if e.is_a?(Redis::BaseError)
+      Rails.logger.warn("SemanticSearch upsert_batch failed: #{e.class}: #{e.message}")
+      indexed
+    end
+
     def delete(record_or_type, id = nil)
       type, record_id =
         if record_or_type.respond_to?(:id)
@@ -150,16 +179,27 @@ module SemanticSearch
       response = openai_connection.post do |req|
         req.headers["Authorization"] = "Bearer #{openai_api_key}"
         req.headers["Content-Type"] = "application/json"
-        req.body = {
-          model: model,
-          input: input,
-          dimensions: dimensions
-        }.to_json
+        req.body = { model: model, input: input, dimensions: dimensions }.to_json
       end
 
       raise Error, "OpenAI embeddings error #{response.status}: #{response.body}" unless response.success?
 
       JSON.parse(response.body).dig("data", 0, "embedding")
+    end
+
+    def embed_many(inputs)
+      response = openai_connection.post do |req|
+        req.headers["Authorization"] = "Bearer #{openai_api_key}"
+        req.headers["Content-Type"] = "application/json"
+        req.body = { model: model, input: inputs, dimensions: dimensions }.to_json
+      end
+
+      raise Error, "OpenAI embeddings error #{response.status}: #{response.body}" unless response.success?
+
+      JSON.parse(response.body)
+        .fetch("data", [])
+        .sort_by { |d| d["index"] }
+        .map { |d| d["embedding"] }
     end
 
     def openai_connection

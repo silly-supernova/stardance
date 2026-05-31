@@ -18,28 +18,35 @@ namespace :search do
 
     indexed = Hash.new(0)
 
-    Project.not_deleted.find_each do |project|
-      indexed["project"] += 1 if SemanticSearch.upsert(project)
+    Project.not_deleted.find_in_batches do |batch|
+      indexed["project"] += SemanticSearch.upsert_batch(batch)
+      print "."
     end
 
     Post.of_devlogs(join: true)
         .where(post_devlogs: { deleted_at: nil })
         .includes(:postable, :project, :user)
-        .find_each do |post|
-      indexed["devlog"] += 1 if post.postable && SemanticSearch.upsert(post.postable)
+        .find_in_batches do |batch|
+      records = batch.filter_map(&:postable)
+      indexed["devlog"] += SemanticSearch.upsert_batch(records)
+      print "."
     end
 
     Post.of_ship_events(join: true)
         .where.not(post_ship_events: { certification_status: "rejected" })
         .includes(:postable, :project, :user)
-        .find_each do |post|
-      indexed["ship"] += 1 if post.postable && SemanticSearch.upsert(post.postable)
+        .find_in_batches do |batch|
+      records = batch.filter_map(&:postable)
+      indexed["ship"] += SemanticSearch.upsert_batch(records)
+      print "."
     end
 
-    User.discoverable.where.not(display_name: [ nil, "" ]).find_each do |user|
-      indexed["user"] += 1 if SemanticSearch.upsert(user)
+    User.discoverable.where.not(display_name: [ nil, "" ]).find_in_batches do |batch|
+      indexed["user"] += SemanticSearch.upsert_batch(batch)
+      print "."
     end
 
+    puts ""
     puts "Indexed #{indexed.sort.map { |type, count| "#{count} #{type}" }.join(', ')}"
   end
 
