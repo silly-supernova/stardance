@@ -714,16 +714,16 @@
   }
 
   &__actions {
-    padding-left: var(--feed-content-offset);
-    display: grid;
-    grid-template-columns: repeat(3, minmax(64px, 1fr)) auto;
+    margin-left: var(--feed-content-offset);
+    width: calc(100% - var(--feed-content-offset));
+    display: flex;
     align-items: center;
-    gap: 14px;
+    justify-content: space-between;
     color: var(--color-space-text-muted);
 
     @media (max-width: 640px) {
-      padding-left: 0;
-      grid-template-columns: repeat(3, 1fr) auto;
+      margin-left: 0;
+      width: 100%;
     }
   }
 
@@ -770,14 +770,12 @@
 
   &__repost {
     display: flex;
-    justify-content: center;
     min-width: 0;
   }
 
   &__repost-menu {
     position: relative;
     display: flex;
-    justify-content: center;
     min-width: 0;
 
     summary {
@@ -864,7 +862,6 @@
   .like-button,
   &__like {
     display: flex;
-    justify-content: center;
   }
 
   .like-button__btn {
@@ -882,12 +879,10 @@
 
   &__more {
     letter-spacing: 0;
-    justify-self: end;
   }
 
   &__more-wrap {
     position: relative;
-    justify-self: end;
   }
 
   &__menu {
