@@ -8,5 +8,4 @@ module LandingHelper
     { url: "https://deltea.itch.io/starbird", mod: 4, by: "By Deltea, 16", img: "landing/projects/deltea.png", alt: "Project by Deltea", desc: "A platformer game about a bird collecting stars, made for Milkyway!" },
     { url: "https://github.com/SteveMan67/platformed", mod: 5, by: "By Steve, 16", img: "landing/projects/steve.avif", alt: "Project by Steve", desc: "A platformer with a fully functioning level editor, online level sharing, and trigger system, built from the ground up in Javascript for Flavortown." }
   ].freeze
-
 end
