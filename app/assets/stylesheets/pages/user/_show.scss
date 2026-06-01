@@ -51,11 +51,36 @@ turbo-frame#profile_tabs {
   overflow: hidden;
 }
 
+.profile--editing .profile__banner--empty .profile__banner-image {
+  opacity: 0;
+}
+
 .profile__banner-image {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.profile__banner-placeholder {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: 2px dashed var(--color-space-border);
+  border-radius: var(--profile-radius);
+
+  .profile--editing & {
+    display: flex;
+  }
+}
+
+.profile__banner-placeholder-text {
+  color: var(--color-space-text-muted);
+  font-size: var(--font-size-l);
+  font-weight: 600;
 }
 
 // Back-button styling matches the project page (64×64, larger position
@@ -1073,7 +1098,3 @@ turbo-frame#profile_tabs {
   padding: var(--space-l);
 }
 
-// Edit-mode visual flag (subtle outline on the profile card)
-.profile--editing .profile__card {
-  outline: 2px solid var(--color-space-accent);
-}
