@@ -2,6 +2,7 @@ class Home::FeedsController < ApplicationController
   include OnboardingResumable
 
   FEED_LIMIT = 20
+  RECOMMENDATION_POOL = 100 # after this, we fallback to SQL
 
   skip_before_action :remember_page
   before_action :resume_or_expire_onboarding!
@@ -17,29 +18,69 @@ class Home::FeedsController < ApplicationController
   private
 
   def load_feed
-    @pagy, posts = pagy(:offset, feed_scope, limit: FEED_LIMIT)
+    recommended = recommended_posts
+    backfill = feed_scope.where.not(id: recommended.map(&:id))
 
-    @feed_posts = posts.select do |post|
-      post.postable.present? &&
-        (!post.repost? || post.visible_repost_original_for?(current_user))
-    end
+    total = recommended.size + backfill.count
+    @pagy = feed_pagy(total)
+    @feed_posts, @feed_post_sources = compose_feed(recommended, backfill, @pagy)
 
-    blend_recommended_posts if first_page?
     preload_feed_associations(@feed_posts)
     @liked_devlog_ids = liked_devlog_ids_for(@feed_posts)
   end
 
-  def blend_recommended_posts
-    @feed_post_sources = @feed_posts.index_with { "quality_latest" }
-    recommendations = Gorse::Recommendations.new(user: current_user)
-    recommended_posts = recommendations.posts(limit: 4)
-    recommended_posts = recommended_posts.reject { |post| @feed_post_sources.key?(post) }
+  def recommended_posts
+    Gorse::Recommendations.new(user: current_user).posts(limit: RECOMMENDATION_POOL)
+  end
 
-    recommended_posts.each_with_index do |post, index|
-      insert_at = [ 1 + (index * 4), @feed_posts.length ].min
-      @feed_posts.insert(insert_at, post)
-      @feed_post_sources[post] = "recommended"
+  def feed_pagy(total)
+    last_page = [ (total.to_f / FEED_LIMIT).ceil, 1 ].max
+    page = [ [ params[:page].to_i, 1 ].max, last_page ].min
+    Pagy::Offset.new(count: total, page: page, limit: FEED_LIMIT)
+  end
+
+  def compose_feed(recommended, backfill, pagy)
+    rec_slice = pagy.offset < recommended.size ? Array(recommended[pagy.offset, pagy.limit]) : []
+    candidates = rec_slice.map { |post| [ post, "recommended" ] }
+
+    remaining = pagy.limit - rec_slice.size
+    if remaining.positive?
+      sql_offset = [ pagy.offset - recommended.size, 0 ].max
+      backfill.offset(sql_offset).limit(remaining).each do |post|
+        next unless post.postable.present?
+        next if post.repost? && !post.visible_repost_original_for?(current_user)
+
+        candidates << [ post, "quality_latest" ]
+      end
     end
+
+    dedupe_by_content(candidates)
+  end
+
+  # don't want to show dupe reposts
+  def dedupe_by_content(candidates)
+    origins = repost_original_ids(candidates.map(&:first))
+    posts = []
+    sources = {}
+    seen = Set.new
+
+    candidates.each do |post, source|
+      key = post.repost? ? origins[post.postable_id] : post.id
+      next if key.nil? || seen.include?(key)
+
+      seen << key
+      posts << post
+      sources[post] = source
+    end
+
+    [ posts, sources ]
+  end
+
+  def repost_original_ids(posts)
+    repost_ids = posts.select(&:repost?).map(&:postable_id)
+    return {} if repost_ids.empty?
+
+    Post::Repost.where(id: repost_ids).pluck(:id, :original_post_id).to_h
   end
 
   def feed_scope

@@ -16,9 +16,13 @@ class Gorse::PostPayload
             .where.not(post_ship_events: { certification_status: "rejected" })
             .where(project_id: Project.not_deleted)
             .select("posts.*"),
+        # Collapse a viral post's reposts: keep only the most recent repost per
+        # original so a single popular post can't flood the feed with one card
+        # per reposter.
         Post.of_reposts(join: true)
             .where(post_reposts: { deleted_at: nil })
-            .select("posts.*")
+            .select("DISTINCT ON (post_reposts.original_post_id) posts.*")
+            .order("post_reposts.original_post_id, posts.created_at DESC")
       ]
     )
     .from("feed_entries AS posts")
@@ -52,7 +56,7 @@ class Gorse::PostPayload
     end
 
     def labels
-      {
+      Gorse::Labels.cast(
         type: post_type,
         project_id: post.project_id,
         author_id: post.user_id,
@@ -60,7 +64,7 @@ class Gorse::PostPayload
         project_type: post.project&.project_type,
         has_media: has_media?,
         certification_status: ship_certification_status
-      }.compact_blank
+      )
     end
 
     def post_type

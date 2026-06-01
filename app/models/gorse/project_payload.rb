@@ -40,7 +40,7 @@ class Gorse::ProjectPayload
     end
 
     def labels
-      {
+      Gorse::Labels.cast(
         project_categories: project.project_categories,
         project_type: project.project_type,
         ship_status: project.ship_status,
@@ -49,7 +49,7 @@ class Gorse::ProjectPayload
         has_demo: project.demo_url.present?,
         has_repo: project.repo_url.present?,
         fire: project.marked_fire_at.present?
-      }.compact_blank
+      )
     end
 
     def timestamp

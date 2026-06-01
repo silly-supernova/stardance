@@ -3,8 +3,9 @@
 require "cgi"
 
 class Gorse::Client
-  def initialize(config: Gorse.config)
+  def initialize(config: Gorse.config, connection: nil)
     @config = config
+    @connection = connection
   end
 
   def enabled?
@@ -24,7 +25,7 @@ class Gorse::Client
   end
 
   def put_feedback(payloads)
-    feedback = Array(payloads).compact
+    feedback = Array.wrap(payloads).compact
     if feedback.any?
       put("api/feedback", feedback)
     else

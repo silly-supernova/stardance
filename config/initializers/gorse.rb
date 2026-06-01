@@ -19,4 +19,4 @@ Rails.application.config.x.gorse.api_key =
   gorse_credentials&.dig(:api_key).presence || ENV["GORSE_API_KEY"].presence
 
 Rails.application.config.x.gorse.timeout_seconds =
-  (gorse_credentials&.dig(:timeout_seconds).presence || ENV["GORSE_TIMEOUT_SECONDS"].presence || 2).to_f
+  (gorse_credentials&.dig(:timeout_seconds).presence || ENV["GORSE_TIMEOUT_SECONDS"].presence || 5).to_f

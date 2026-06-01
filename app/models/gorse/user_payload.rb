@@ -17,13 +17,13 @@ class Gorse::UserPayload
     attr_reader :user
 
     def labels
-      {
+      Gorse::Labels.cast(
         interests: user.interests,
         regions: user.regions,
         experience_level: user.experience_level,
         shop_region: user.shop_region,
         verification_status: user.verification_status,
         ysws_eligible: user.ysws_eligible?
-      }.compact_blank
+      )
     end
 end
