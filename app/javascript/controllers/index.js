@@ -118,6 +118,9 @@ application.register("guide-preview", GuidePreviewController);
 import HackatimeLinkController from "./hackatime_link_controller";
 application.register("hackatime-link", HackatimeLinkController);
 
+import HardwareUnlockTimerController from "./hardware_unlock_timer_controller";
+application.register("hardware-unlock-timer", HardwareUnlockTimerController);
+
 import HcbChartController from "./hcb_chart_controller";
 application.register("hcb-chart", HcbChartController);
 

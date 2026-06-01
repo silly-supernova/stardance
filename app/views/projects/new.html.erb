@@ -78,8 +78,15 @@
       <%= form_with url: projects_path, method: :post, data: { turbo_frame: "_top" } do |f| %>
         <%= hidden_field_tag "project[title]", "Untitled" %>
         <%= f.button type: :submit, class: "project-creation__blank-btn" do %>
-          Blank new project +
+          Blank new software project +
         <% end %>
+        <div class="project-creation__blank-btn project-creation__blank-btn--locked"
+             data-controller="hardware-unlock-timer"
+             data-hardware-unlock-timer-target-iso-value="2026-06-08T23:59:00-04:00"
+             aria-disabled="true"
+             style="cursor: not-allowed; opacity: 0.6; margin-left: var(--space-m); width: auto; padding-left: var(--space-l); padding-right: var(--space-l);">
+          Hardware unlocks in <span data-hardware-unlock-timer-target="time" style="margin-left: 0.4em; font-variant-numeric: tabular-nums;">--:--:--:--</span>
+        </div>
       <% end %>
     </section>
 
