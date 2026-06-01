@@ -27,12 +27,12 @@
 class Rsvp < ApplicationRecord
   AMBASSADOR_REFERRAL_PREFIX = "a-".freeze
   USER_REF_OPTIONS = [
-    "Teacher",
+    "HackClub",
     "NASA",
     "AMD",
-    "Linus Tech Tips",
     "GitHub",
-    "HackClub",
+    "Linus Tech Tips",
+    "Teacher",
     "Friend"
   ].freeze
 
