@@ -399,7 +399,12 @@ class ShopItem < ApplicationRecord
   end
 
   def required_achievement_objects
-    requires_achievement.map { |slug| Achievement.find(slug) }
+    requires_achievement.filter_map do |slug|
+      Achievement::SLUGGED.fetch(slug.to_sym) do
+        Rails.logger.warn("[ShopItem##{id}] requires unknown achievement slug: #{slug}")
+        nil
+      end
+    end
   end
 
   # True iff this item is gated by mission_shop_unlocks AND the user has not
