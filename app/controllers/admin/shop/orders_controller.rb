@@ -588,13 +588,10 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
     scope = scope.where("created_at >= ?", params[:date_from]) if params[:date_from].present?
     scope = scope.where("created_at <= ?", params[:date_to]) if params[:date_to].present?
 
-    # Filter by the item's STI type (e.g. ShopItem::ThirdPartyPhysical).
     if params[:item_type].present?
       scope = scope.joins(:shop_item).where(shop_items: { type: params[:item_type] })
     end
 
-    # Tickets range. total_cost is frozen_item_price * quantity (the value
-    # shown in the "Tickets" column), so filter on the same expression.
     if params[:min_tickets].present?
       scope = scope.where("shop_orders.frozen_item_price * shop_orders.quantity >= ?", params[:min_tickets])
     end

@@ -1,13 +1,8 @@
-// Reusable Space-themed table — §1 sets, §2 typography, §3 containers from branding.md.
-// Usage: wrap any <table> in .space-table__wrap, add .space-table to the <table>.
-
 .space-table {
   &__wrap {
     width: 100%;
     border-radius: 8px;
     border: 2px solid var(--color-set-3-bg);
-    // Scroll horizontally when the table is wider than its container instead
-    // of clipping the rightmost columns. border-radius still clips the corners.
     overflow-x: auto;
   }
 

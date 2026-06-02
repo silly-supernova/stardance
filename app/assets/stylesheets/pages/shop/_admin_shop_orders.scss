@@ -55,9 +55,6 @@
     }
   }
 
-  // ─── Statistics ──────────────────────────────────────────────
-  // Status counts rendered as clickable filter chips (reuses the
-  // global .badge colour classes for each order state).
   &__stats {
     display: flex;
     flex-direction: column;
@@ -102,7 +99,6 @@
     }
   }
 
-  // Count pill nested inside each status chip for emphasis.
   &__stat-count {
     display: inline-block;
     margin-left: 0.35em;
@@ -121,7 +117,6 @@
     }
   }
 
-  // ─── Filters & Search ────────────────────────────────────────
   &__filters {
     @include s.space-card;
     padding: var(--space-m);
@@ -178,7 +173,6 @@
     }
   }
 
-  // Two number inputs (min/max) sharing one labelled field.
   &__range-inputs {
     display: flex;
     align-items: center;
@@ -222,7 +216,6 @@
     @include s.pill-buttons;
   }
 
-  // ─── Action Leaderboard ──────────────────────────────────────
   &__leaderboard {
     display: flex;
     flex-direction: column;
@@ -273,7 +266,6 @@
     margin: 0;
   }
 
-  // ─── Grouped-by-user tables ──────────────────────────────────
   &__group {
     @include s.space-card;
     padding: var(--space-m);
