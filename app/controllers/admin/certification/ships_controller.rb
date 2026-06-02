@@ -1,6 +1,6 @@
 class Admin::Certification::ShipsController < Admin::Certification::ApplicationController
   before_action :release_other_claims, only: [ :next, :claim ]
-  before_action :set_ship, only: [ :show, :update, :claim ]
+  before_action :set_ship, only: [ :show, :update, :claim, :unclaim ]
   before_action :set_body_class, only: [ :index, :show, :update ]
 
   def index
@@ -34,6 +34,10 @@ class Admin::Certification::ShipsController < Admin::Certification::ApplicationC
 
   def show
     authorize @ship
+    if @ship.pending? && @ship.reviewer_id == current_user.id &&
+       @ship.claim_expires_at.present? && @ship.claim_expires_at < Time.current + 5.minutes
+      @ship.update!(claim_expires_at: Time.current + ::Certification::Reviewable::CLAIM_TTL)
+    end
     @reviewed_today = ::Certification::Ship.reviewed_today(current_user)
   end
 
@@ -73,6 +77,12 @@ class Admin::Certification::ShipsController < Admin::Certification::ApplicationC
     else
       redirect_to admin_certification_ships_path, alert: "Couldn't claim that review — someone else got it."
     end
+  end
+
+  def unclaim
+    authorize @ship, :unclaim?
+    @ship.release_claim!
+    redirect_to admin_certification_ships_path, notice: "Unclaimed review for “#{@ship.project.title}.”"
   end
 
   private

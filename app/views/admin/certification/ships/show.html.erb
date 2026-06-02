@@ -2,10 +2,12 @@
 
 <%
   owner = @ship.project.memberships.find(&:owner?)&.user
-  can_review = @ship.reviewer_id == current_user.id && !@ship.claim_expired?
+  can_review = @ship.reviewer_id == current_user.id && @ship.pending?
 %>
 
-<div class="app-layout app-layout--wide">
+<div class="app-layout app-layout--wide"
+     data-controller="certification--queue"
+     data-certification--queue-server-now-value="<%= Time.current.iso8601 %>">
   <div class="app-layout__main app-layout__main--wide ship-review">
     <%= link_to "← back to queue", admin_certification_ships_path, class: "ship-review__back" %>
 
