@@ -74,9 +74,11 @@ $set-fg-secondary: #83828d;
   }
 
   tbody tr:nth-child(odd) {
-    background: color-mix(in srgb,
-        var(--color-set-2-bg),
-        var(--color-set-1-bg) 40%);
+    background: color-mix(
+      in srgb,
+      var(--color-set-2-bg),
+      var(--color-set-1-bg) 40%
+    );
   }
 }
 
@@ -87,7 +89,9 @@ $set-fg-secondary: #83828d;
   border: 2px solid $set-fg-secondary;
   border-radius: 9999px;
   padding: 0.25em 0.75em;
-  transition: color 0.1s, border-color 0.1s;
+  transition:
+    color 0.1s,
+    border-color 0.1s;
 
   &:hover {
     color: var(--color-space-text);
@@ -97,7 +101,6 @@ $set-fg-secondary: #83828d;
 
 // Pill buttons (branding §4)
 @mixin pill-buttons {
-
   .btn-primary,
   .btn-secondary,
   .btn-danger,

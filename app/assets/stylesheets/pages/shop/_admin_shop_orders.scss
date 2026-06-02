@@ -83,7 +83,10 @@
   &__stat {
     text-decoration: none;
     font-weight: 600;
-    transition: transform 0.1s, box-shadow 0.1s, filter 0.1s;
+    transition:
+      transform 0.1s,
+      box-shadow 0.1s,
+      filter 0.1s;
 
     &:hover {
       transform: translateY(-1px);
@@ -250,7 +253,10 @@
     a {
       @include s.outlined-pill-link;
       padding: 0.2em 0.7em;
-      transition: color 0.1s, border-color 0.1s, background 0.1s;
+      transition:
+        color 0.1s,
+        border-color 0.1s,
+        background 0.1s;
 
       &.is-active {
         color: var(--color-set-1-bg);

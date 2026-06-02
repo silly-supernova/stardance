@@ -80,11 +80,11 @@ class Admin::UserPolicy < ApplicationPolicy
     user&.admin? || user&.fulfillment_person?
   end
   def view_email?
-    user&.admin? || user&.fraud_dept?  || user&.fulfillment_person? 
+    user&.admin? || user&.fraud_dept?  || user&.fulfillment_person?
   end
 
   def view_internal_notes?
-    user&.admin? || user&.fraud_dept?  || user&.fulfillment_person? 
+    user&.admin? || user&.fraud_dept?  || user&.fulfillment_person?
   end
 
   def audit_log?

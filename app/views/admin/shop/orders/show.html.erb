@@ -790,7 +790,7 @@
       </form>
     </div>
   </div>
-<%end %>
+<% end %>
 <% if policy(current_user).audit_log? %>
   <%= render Admin::PastOrdersComponent.new(user: @order.user, orders: @user_orders) %>
   <%= render "admin/shared/audit_log", record: @order, item_type: "ShopOrder" %>
