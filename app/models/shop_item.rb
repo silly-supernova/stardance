@@ -294,18 +294,21 @@ class ShopItem < ApplicationRecord
     sale_percentage.present? && sale_percentage > 0
   end
 
-  def average_hours_estimated
-    return 0 unless ticket_cost.present?
-    ticket_cost / (Rails.configuration.game_constants.tickets_per_dollar * Rails.configuration.game_constants.dollars_per_mean_hour)
-  end
-
-  def hours_estimated
-    average_hours_estimated.to_i
-  end
-
   def fixed_estimate(price)
     return 0 unless price.present? && price > 0
     price / (Rails.configuration.game_constants.tickets_per_dollar * Rails.configuration.game_constants.dollars_per_mean_hour)
+  end
+
+  def hours_estimate_label(price)
+    return nil unless price.present? && price.to_f.positive?
+
+    base_hours = fixed_estimate(price).to_f
+    return nil unless base_hours.positive?
+
+    high = base_hours.ceil
+    low = (base_hours * 0.5).ceil
+
+    low == high ? "~#{low}" : "~#{low}-#{high}"
   end
 
   def remaining_stock
@@ -399,7 +402,12 @@ class ShopItem < ApplicationRecord
   end
 
   def required_achievement_objects
-    requires_achievement.map { |slug| Achievement.find(slug) }
+    requires_achievement.filter_map do |slug|
+      Achievement.find(slug)
+    rescue KeyError
+      Rails.logger.warn("[ShopItem##{id}] requires unknown achievement slug: #{slug}")
+      nil
+    end
   end
 
   # True iff this item is gated by mission_shop_unlocks AND the user has not
