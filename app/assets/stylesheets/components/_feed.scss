@@ -1462,7 +1462,9 @@
 
     p {
       margin: 0 0 0.4em;
-      &:last-child { margin-bottom: 0; }
+      &:last-child {
+        margin-bottom: 0;
+      }
     }
   }
 
