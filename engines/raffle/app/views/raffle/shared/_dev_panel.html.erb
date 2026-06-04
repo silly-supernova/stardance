@@ -1,7 +1,4 @@
-<%# Development-only preview panel. Submits `dev_*` query params that %>
-<%# DashboardController#apply_dev_preview reads to override the hero's data, so %>
-<%# the real view re-renders across weeks / ticket counts / odds. Never %>
-<%# rendered in production (guarded at the call site). %>
+<%# Development-only preview panel. %>
 <% total = 16 %>
 <% preset = ->(overrides) { "#{request.path}?#{request.query_parameters.merge(overrides).to_query}" } %>
 <details class="raffle-dev" open>
@@ -13,12 +10,12 @@
     </label>
 
     <label class="raffle-dev__row">
-      <span>Tickets this week</span>
-      <input type="number" name="dev_tickets" min="0" value="<%= @ticket_count.to_i %>" autocomplete="off">
+      <span>Entries this week</span>
+      <input type="number" name="dev_entries" min="0" value="<%= @entry_count.to_i %>" autocomplete="off">
     </label>
 
     <label class="raffle-dev__row">
-      <span>Pool (all tickets)</span>
+      <span>Pool (all entries)</span>
       <input type="number" name="dev_pool" min="0" value="<%= @week_pool.to_i %>" autocomplete="off">
     </label>
 
@@ -33,11 +30,11 @@
     </label>
 
     <div class="raffle-dev__presets">
-      <span class="raffle-dev__presets-label">Ticket scenarios</span>
-      <a href="<%= preset.call("dev_tickets" => 0, "dev_pool" => 2_400, "dev_entrants" => 120, "dev_rank" => nil) %>">none</a>
-      <a href="<%= preset.call("dev_tickets" => 20, "dev_pool" => 2_400, "dev_entrants" => 120, "dev_rank" => 84) %>">medium</a>
-      <a href="<%= preset.call("dev_tickets" => 160, "dev_pool" => 2_400, "dev_entrants" => 120, "dev_rank" => 9) %>">high</a>
-      <a href="<%= preset.call("dev_tickets" => 900, "dev_pool" => 2_400, "dev_entrants" => 120, "dev_rank" => 1) %>">max</a>
+      <span class="raffle-dev__presets-label">Entry scenarios</span>
+      <a href="<%= preset.call("dev_entries" => 0, "dev_pool" => 500, "dev_entrants" => 100, "dev_rank" => nil) %>">none</a>
+      <a href="<%= preset.call("dev_entries" => 6, "dev_pool" => 500, "dev_entrants" => 100, "dev_rank" => 42) %>">medium</a>
+      <a href="<%= preset.call("dev_entries" => 31, "dev_pool" => 500, "dev_entrants" => 100, "dev_rank" => 5) %>">high</a>
+      <a href="<%= preset.call("dev_entries" => 100, "dev_pool" => 500, "dev_entrants" => 100, "dev_rank" => 1) %>">max</a>
     </div>
 
     <div class="raffle-dev__actions">
@@ -46,7 +43,7 @@
     </div>
   </form>
 
-  <% if signed_in? %>
+  <% if enrolled? %>
     <div class="raffle-dev__addrefs">
       <span class="raffle-dev__presets-label">Add demo referrals (to you)</span>
       <%= form_with url: dev_referrals_path, method: :post, class: "raffle-dev__refform" do %>
@@ -74,7 +71,6 @@
       if (range && out) {
         range.addEventListener("input", function () { out.textContent = range.value; });
       }
-      // Auto-apply when any field settles (range fires "change" on release).
       form.querySelectorAll("input").forEach(function (el) {
         el.addEventListener("change", function () { form.submit(); });
       });

@@ -427,6 +427,8 @@ Rails.application.routes.draw do
     mount Raffle::Engine, at: "/", as: :raffle_engine
   end
 
+  delete "dismiss_raffle_banner", to: "sessions#dismiss_raffle_banner", as: :dismiss_raffle_banner
+
   # Sitemap
   get "sitemap.xml", to: "sitemaps#index", as: :sitemap, defaults: { format: :xml }
 
@@ -618,6 +620,7 @@ Rails.application.routes.draw do
       resources :weeks, only: [ :index, :show ] do
         member do
           post :close
+          post :draw
         end
       end
     end

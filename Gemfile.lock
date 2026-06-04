@@ -13,7 +13,7 @@ PATH
   remote: engines/raffle
   specs:
     raffle (0.1.0)
-      omniauth-github
+      omniauth-github (~> 2.0)
       rails (>= 8.1)
 
 GEM
@@ -828,7 +828,7 @@ DEPENDENCIES
   neighbor
   norairrecord
   omniauth
-  omniauth-github
+  omniauth-github (~> 2.0)
   omniauth-oauth2
   omniauth-rails_csrf_protection
   omniauth_openid_connect

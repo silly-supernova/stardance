@@ -5,5 +5,5 @@ Gem::Specification.new do |spec|
   spec.authors = [ "Hack Club" ]
 
   spec.add_dependency "rails", ">= 8.1"
-  spec.add_dependency "omniauth-github"
+  spec.add_dependency "omniauth-github", "~> 2.0"
 end

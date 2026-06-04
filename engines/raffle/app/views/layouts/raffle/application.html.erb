@@ -7,6 +7,7 @@
     <%= csrf_meta_tags %>
     <%= favicon_link_tag "favicon.png", type: "image/png" %>
     <%= stylesheet_link_tag "application" %>
+    <%= javascript_include_tag "application", "data-turbo-track": "reload", type: "module" %>
   </head>
 
   <body class="raffle">
@@ -24,37 +25,17 @@
       </div>
 
       <div class="raffle-nav__right">
-        <% if signed_in? %>
-          <div class="raffle-nav__user">
-            <%= image_tag participant_avatar_url(current_participant), class: "raffle-nav__avatar", alt: "" %>
-            <span class="raffle-nav__handle"><%= current_participant.github_login %></span>
-            <a href="#raffle-settings" class="raffle-settings__open" aria-label="Settings">
-              <%= inline_svg_tag "icons/gear.svg", class: "raffle-settings__icon", aria_hidden: "true" %>
-            </a>
-          </div>
+        <% if enrolled? %>
+          <span class="raffle-nav__handle"><%= current_participant.display_name %></span>
+          <% if current_participant.age_group_adult? %>
+            <%= button_to "Sign out", logout_path, method: :delete, class: "raffle-nav__signout", form: { class: "raffle-nav__signout-form" } %>
+          <% end %>
+        <% elsif signed_in? %>
+          <span class="raffle-nav__handle"><%= current_user.display_name %></span>
         <% end %>
-        <%# "Raffle" wordmark temporarily hidden — repurposing it. %>
+        <a href="<%= main_app_base_url %>/" class="raffle-nav__back">&larr; Stardance</a>
       </div>
     </header>
-
-    <% if signed_in? %>
-      <div id="raffle-settings" class="raffle-modal" role="dialog" aria-modal="true" aria-label="Settings">
-        <a href="#" class="raffle-modal__backdrop" aria-label="Close settings" tabindex="-1"></a>
-        <div class="raffle-modal__panel">
-          <div class="raffle-modal__head">
-            <h2 class="raffle-modal__title">Settings</h2>
-            <a href="#" class="raffle-modal__close" aria-label="Close">&times;</a>
-          </div>
-
-          <div class="raffle-modal__account">
-            <span class="raffle-modal__account-label">Signed in as <strong><%= current_participant.github_login %></strong></span>
-            <%= button_to "Sign out", logout_path, method: :delete,
-                          class: "raffle-btn raffle-btn--ghost raffle-btn--sm",
-                          form: { data: { turbo: false } } %>
-          </div>
-        </div>
-      </div>
-    <% end %>
 
     <main class="raffle-main">
       <%= yield %>
@@ -64,24 +45,6 @@
 
     <script>
 //<![CDATA[
-
-      document.addEventListener("click", function (e) {
-        var btn = e.target.closest("[data-copy]");
-        if (!btn) return;
-        e.preventDefault();
-        navigator.clipboard.writeText(btn.getAttribute("data-copy")).then(function () {
-          var prev = btn.getAttribute("data-label") || btn.textContent;
-          btn.classList.add("is-copied");
-          btn.textContent = "✓ Copied!";
-          setTimeout(function () {
-            btn.classList.remove("is-copied");
-            btn.textContent = prev;
-          }, 1200);
-        });
-      });
-
-      // Stimulus isn't loaded on the raffle subdomain, so submit-on-change
-      // (e.g. the leaderboard week picker) is wired here instead.
       document.addEventListener("change", function (e) {
         var el = e.target.closest("[data-auto-submit]");
         if (!el || !el.form) return;
@@ -91,7 +54,6 @@
           el.form.submit();
         }
       });
-
 //]]>
 </script>
   </body>

@@ -1,9 +1,5 @@
 module Raffle
   module Referrals
-    # Opens a pending referral for a brand-new platform user whose signup
-    # carried a raffle code (the platform already persisted it on `users.ref`).
-    # Refs that aren't raffle codes — or codes with no matching participant —
-    # are ignored, so this never interferes with other uses of `users.ref`.
     class Register
       def self.run_safely(user)
         new(user).run
@@ -26,17 +22,23 @@ module Raffle
         participant = Raffle::Participant.find_by(code: match[2])
         return unless participant
 
-        referral = Raffle::Referral.create_or_find_by!(referred_user_id: @user.id) do |r|
+        # Self-referral: referred user IS the referrer
+        if participant.user_id == @user.id
+          Raffle::Referral.create_or_find_by!(referred_user_id: @user.id) do |r|
+            r.participant = participant
+            r.channel = match[1] == "d" ? "discord" : "web"
+            r.raw_ref = match[0]
+            r.status = :self_referral
+          end
+          return
+        end
+
+        Raffle::Referral.create_or_find_by!(referred_user_id: @user.id) do |r|
           r.participant = participant
           r.channel = match[1] == "d" ? "discord" : "web"
           r.raw_ref = match[0]
           r.status = :pending
         end
-
-        # Rare, but a user can be created already-verified; credit immediately.
-        Raffle::Referrals::Credit.run_safely(@user) if @user.identity_verified?
-
-        referral
       end
     end
   end

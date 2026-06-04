@@ -1,33 +1,24 @@
 require "securerandom"
 
 module Raffle
-  # A person competing in the raffle. Identified by GitHub (independent of the
-  # platform's Hack Club login). Owns a referral code and many referrals.
   class Participant < ApplicationRecord
     has_paper_trail
 
+    belongs_to :user, class_name: "::User", optional: true
+    belongs_to :signup_week, class_name: "Raffle::Week", optional: true
     has_many :referrals, class_name: "Raffle::Referral", dependent: :destroy
+
+    enum :age_group, { teen: "teen", adult: "adult" }, prefix: :age_group
 
     before_validation :assign_code, on: :create
 
-    validates :github_uid, presence: true, uniqueness: true
-    validates :github_login, presence: true
     validates :code, presence: true, uniqueness: true
+    validates :user_id, presence: true, uniqueness: { allow_nil: true }, if: :age_group_teen?
+    validates :github_uid, presence: true, uniqueness: { allow_nil: true }, if: :age_group_adult?
+    validates :github_login, presence: true, if: :age_group_adult?
+    validate :has_identity
 
-    # Find-or-create from an OmniAuth GitHub payload.
-    def self.from_github(auth)
-      info = auth.info
-      github_uid = auth.uid.to_s
-      github_login = info&.nickname.to_s.strip.presence || "github-#{github_uid}"
-
-      participant = find_or_initialize_by(github_uid: github_uid)
-      participant.github_login = github_login
-      participant.name = info&.name.to_s.strip.presence || github_login
-      participant.github_email = info&.email.to_s.strip.downcase.presence
-      participant.avatar_url = info&.image
-      participant.save!
-      participant
-    end
+    ELIGIBLE_COUNTRIES = %w[US CA].freeze
 
     def self.generate_unique_code
       alphabet = "abcdefghjkmnpqrstuvwxyz23456789"
@@ -38,30 +29,62 @@ module Raffle
       raise "could not generate a unique raffle code"
     end
 
-    # Shareable link for a channel (:web -> r-, :discord -> d-).
+    def self.find_or_enroll!(user)
+      return nil unless country_eligible?(user)
+
+      participant = find_or_initialize_by(user: user)
+      if participant.new_record?
+        participant.age_group = :teen
+        participant.signup_week = Raffle::Week.current
+        participant.save!
+      end
+      participant
+    end
+
+    def self.from_github(auth)
+      uid = auth.uid.to_s
+      info = auth.info
+      login = info&.nickname.to_s.strip.presence || "github-#{uid}"
+
+      participant = find_or_initialize_by(github_uid: uid)
+      participant.github_login = login
+      participant.github_avatar_url = info&.image
+      participant.age_group = :adult
+      participant.save!
+      participant
+    end
+
+    def display_name
+      age_group_teen? ? user&.display_name : github_login
+    end
+
     def referral_url(channel = :web)
       prefix = channel == :discord ? "d" : "r"
       "https://stardance.space/#{prefix}-#{code}"
     end
 
-    def ticket_count(week)
-      return 0 unless week
+    def entry_count(week)
+      return 0 unless week && eligible?
 
-      referrals.status_verified.where(credited_week_id: week.id).sum(:tickets_awarded)
+      base = (age_group_teen? && signup_week_id == week.id) ? 1 : 0
+      referral_entries = referrals.status_verified.where(credited_week_id: week.id).count * 20
+      base + referral_entries
     end
 
-    def ticket_totals_by_week
-      referrals.status_verified
-               .where.not(credited_week_id: nil)
-               .group(:credited_week_id)
-               .sum(:tickets_awarded)
+    def eligible?
+      return eligible unless age_group_teen?
+      eligible && self.class.country_eligible?(user)
+    end
+
+    def self.country_eligible?(user)
+      country = user.geocoded_country.presence || user.shop_region.to_s.presence
+      country&.in?(ELIGIBLE_COUNTRIES) || false
     end
 
     def pending_referrals
       referrals.status_pending.order(created_at: :desc)
     end
 
-    # Hide self-referrals from the participant entirely.
     def visible_referrals
       referrals.where.not(status: :self_referral)
     end
@@ -70,6 +93,11 @@ module Raffle
 
     def assign_code
       self.code ||= self.class.generate_unique_code
+    end
+
+    def has_identity
+      return if user_id.present? || github_uid.present?
+      errors.add(:base, "must have either a user or GitHub identity")
     end
   end
 end

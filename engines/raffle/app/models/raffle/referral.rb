@@ -1,7 +1,4 @@
 module Raffle
-  # A new platform user attributed to a participant's referral link. Starts
-  # `pending`; converts to `verified` (+tickets) when the referred user clears
-  # the platform's ID verification. `self_referral` is hidden and uncredited.
   class Referral < ApplicationRecord
     has_paper_trail
 
@@ -15,6 +12,5 @@ module Raffle
 
     validates :channel, :status, presence: true
     validates :referred_user_id, uniqueness: true
-    validates :tickets_awarded, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   end
 end

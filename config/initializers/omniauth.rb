@@ -53,13 +53,13 @@ Rails.application.config.middleware.use OmniAuth::Builder do
         }
       }
 
-    # GitHub — used only by the raffle engine (raffle. subdomain) for its own,
-    # platform-independent login. Creds via ENV (with credentials fallback);
-    # absent creds are fine in dev where the raffle dev-login bypass is used.
+    # GitHub — used by the raffle engine for 19+ adult participants
     provider :github,
       ENV["RAFFLE_GITHUB_CLIENT_ID"] || Rails.application.credentials.dig(:github_raffle, :client_id),
       ENV["RAFFLE_GITHUB_CLIENT_SECRET"] || Rails.application.credentials.dig(:github_raffle, :client_secret),
       {
-        scope: "read:user user:email"
+        scope: "read:user",
+        callback_path: "/auth/github/callback"
       }
+
 end
