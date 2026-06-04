@@ -1018,6 +1018,7 @@
 
   background: var(--color-set-4-bg);
   border-color: var(--ship-decision-accent);
+  gap: var(--space-xxs);
 
   &--approved {
     --ship-decision-accent: var(--color-brand-mint);
@@ -1027,11 +1028,10 @@
     --ship-decision-accent: var(--color-brand-salmon);
   }
 
-  &__title {
-    margin: var(--space-xxs) 0 0;
+  &__subject {
     color: var(--color-space-text);
-    font-size: var(--font-size-xl);
-    line-height: 1.15;
+    font-weight: 400;
+    text-decoration: none;
   }
 
   &__message {

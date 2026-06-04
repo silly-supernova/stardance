@@ -2,7 +2,6 @@
   decision = local_assigns.fetch(:decision) { post.postable }
   project = local_assigns.fetch(:project) { post.project }
   approved = decision.approved?
-  title = approved ? "Project certified" : "Returned for changes"
   message = if approved
     "This project was vetted by Shipwrights and is now up for voting. You can ship again after making more updates."
   else
@@ -39,15 +38,11 @@
           <span class="feed-post-card__author">Shipwrights</span>
         <% end %>
         <span class="feed-post-card__context"><%= approved ? "approved" : "returned" %></span>
-        <%= link_to project.title,
-                    project_path(project),
-                    class: "feed-post-card__project",
-                    data: { turbo_frame: "_top" } %>
+        <span class="ship-decision-card__subject">your project</span>
         <time class="feed-post-card__time" datetime="<%= decided_on.iso8601 %>" title="<%= l(decided_on, format: :long) %>">
           · <%= time_ago_in_words(decided_on) %>
         </time>
       </p>
-      <h2 class="ship-decision-card__title"><%= title %></h2>
     </div>
   </header>
 
