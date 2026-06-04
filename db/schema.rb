@@ -175,12 +175,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_08_175849) do
     t.text "internal_reason"
     t.integer "lock_version", default: 0, null: false
     t.bigint "project_id", null: false
+    t.text "recert_reason"
+    t.bigint "returned_by_id"
     t.bigint "reviewer_id"
     t.integer "stardust_earned"
     t.integer "status", default: 0, null: false
     t.datetime "updated_at", null: false
     t.index ["decided_at"], name: "index_certification_ship_reviews_on_decided_at"
     t.index ["project_id"], name: "index_ship_reviews_unique_pending_project", unique: true, where: "(status = 0)"
+    t.index ["returned_by_id"], name: "index_certification_ship_reviews_on_returned_by_id"
     t.index ["reviewer_id"], name: "index_certification_ship_reviews_on_reviewer_id"
     t.index ["status", "claim_expires_at"], name: "idx_on_status_claim_expires_at_c7a5e87a52"
   end
@@ -195,6 +198,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_08_175849) do
     t.bigint "post_ship_event_id", null: false
     t.bigint "project_id", null: false
     t.datetime "repo_checked_at", precision: nil
+    t.datetime "returned_at"
     t.datetime "reviewed_at", precision: nil
     t.bigint "reviewer_id"
     t.bigint "ship_cert_id"
@@ -1271,6 +1275,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_08_175849) do
   add_foreign_key "certification_devlog_reviews", "certification_ysws_reviews", column: "ysws_review_id"
   add_foreign_key "certification_devlog_reviews", "post_devlogs"
   add_foreign_key "certification_ship_reviews", "projects"
+  add_foreign_key "certification_ship_reviews", "users", column: "returned_by_id"
   add_foreign_key "certification_ship_reviews", "users", column: "reviewer_id"
   add_foreign_key "certification_ysws_reviews", "certification_ship_reviews", column: "ship_cert_id"
   add_foreign_key "certification_ysws_reviews", "post_ship_events"
