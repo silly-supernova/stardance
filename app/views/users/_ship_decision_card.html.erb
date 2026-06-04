@@ -63,8 +63,8 @@
   </header>
 
   <% if decision.feedback.present? %>
-    <section class="ship-decision-card__feedback" aria-label="Shipwright feedback">
-      <p class="ship-decision-card__feedback-label">Feedback</p>
+    <section class="ship-decision-card__section ship-decision-card__section--feedback" aria-label="Shipwright feedback">
+      <p class="ship-decision-card__section-label">Feedback</p>
       <div class="ship-decision-card__feedback-body">
         <%= simple_format(decision.feedback, {}, sanitize: true) %>
       </div>
@@ -72,14 +72,14 @@
   <% end %>
 
   <% if decision.verdict_video.attached? %>
-    <section class="ship-decision-card__video-section" aria-label="Shipwright review video">
-      <p class="ship-decision-card__video-label">Review video</p>
-      <div class="ship-decision-card__video-frame">
+    <section class="ship-decision-card__section" aria-label="Shipwright review video">
+      <p class="ship-decision-card__section-label">Review video</p>
+      <div class="feed-post-card__media-viewport">
         <%= video_tag url_for(decision.verdict_video),
                       controls: true,
                       playsinline: true,
                       preload: "metadata",
-                      class: "ship-decision-card__video" %>
+                      class: "feed-post-card__video" %>
       </div>
     </section>
   <% end %>
