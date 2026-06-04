@@ -26,6 +26,10 @@
           data-tooltip-title-value="Who are Shipwrights?"
           data-tooltip-message-value="Shipwrights are expert shippers who review submitted ships for quality, working demos, clear writeups, and program rules before projects move forward."
           data-tooltip-position-value="top">Shipwright Verdict</span>
+    <span class="ship-decision-card__visibility"
+          title="Only project members and Stardance admins can see this verdict and feedback.">
+      Project members only
+    </span>
   </div>
 
   <header class="ship-decision-card__main">
@@ -54,9 +58,6 @@
                       data: { turbo_frame: "_top" } %>
         </p>
       <% end %>
-      <p class="ship-decision-card__visibility">
-        Private: only project members and Stardance admins can see this verdict and feedback.
-      </p>
       <p class="ship-decision-card__message"><%= message %></p>
     </div>
   </header>

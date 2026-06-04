@@ -1129,10 +1129,16 @@
   }
 
   &__visibility {
-    margin: 0;
     color: var(--color-space-text-muted);
     font-size: var(--font-size-s);
+    font-weight: 600;
     line-height: 1.35;
+
+    &::before {
+      content: "|";
+      margin-right: var(--space-xxs);
+      color: var(--color-space-border);
+    }
   }
 
   &__message {
