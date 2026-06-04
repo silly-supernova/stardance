@@ -5,7 +5,7 @@
   variant = local_assigns.fetch(:variant, :condensed)
   attachment = project.current_mission_attachment
   mission = attachment&.mission
-  is_member = viewer && project.users.exists?(id: viewer.id)
+  is_member = viewer && (project.users.loaded? ? project.users.include?(viewer) : project.users.exists?(id: viewer.id))
 %>
 
 <% if mission.present? %>

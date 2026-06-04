@@ -32,7 +32,9 @@ class ProjectsController < ApplicationController
   end
 
   def prepare_project_show_context
-    @members = @project.users.where(banned: false).to_a
+    @members = @project.users.where(banned: false).includes(:preference).to_a
+    @project_owner = @project.memberships.owner.includes(user: :preference).first&.user
+    @current_mission = @project.current_mission
     @is_member = current_user && @members.include?(current_user)
     @active_nav_slug = @is_member ? "projects" : "home"
     @can_edit_project = @is_member && policy(@project).update?
@@ -51,8 +53,6 @@ class ProjectsController < ApplicationController
       if @hackatime_linked
         @linked_hackatime_projects = @project.hackatime_projects
         @all_hackatime_projects = current_user.hackatime_projects
-        result = current_user.try_sync_hackatime_data!
-        @hackatime_times = result&.dig(:projects) || {}
 
         linked_ids = @linked_hackatime_projects.map(&:id).to_set
         taken_project_ids = @all_hackatime_projects.map(&:project_id).compact.uniq - [ @project.id ]
@@ -77,7 +77,7 @@ class ProjectsController < ApplicationController
     load_posts = ->(include_deleted_devlogs: false) {
       scope = @project.posts
                        .visible_to(current_user)
-                       .preload(:postable)
+                       .includes(:user, postable: [ { attachments_attachments: :blob } ])
                        .order(created_at: :desc)
       unless include_deleted_devlogs
         scope = scope.joins("LEFT JOIN post_devlogs ON posts.postable_type = 'Post::Devlog' AND posts.postable_id = post_devlogs.id")
@@ -101,9 +101,9 @@ class ProjectsController < ApplicationController
     @posts = @posts.reject { |post| post.postable_type == "Post::ShipEvent" && post.postable.certification_status == "rejected" }
 
     @show_project_onboarding = @is_member && @posts.empty?
-    @project_onboarding_mission = @project.current_mission
+    @project_onboarding_mission = @current_mission
 
-    @available_missions = if @is_member && @project.current_mission.nil? && !@project.shipped?
+    @available_missions = if @is_member && @current_mission.nil? && !@project.shipped?
       taken_mission_ids = current_user.projects
                                       .where(deleted_at: nil)
                                       .joins(:mission_attachments)
@@ -121,8 +121,9 @@ class ProjectsController < ApplicationController
       []
     end
 
+    current_user_project_count = current_user&.projects&.count.to_i
     @show_project_tour = params[:welcome] == "1" && current_user.present? && @is_member &&
-                         current_user.projects.count == 1 && !session[:project_tour_seen]
+                         current_user_project_count == 1 && !session[:project_tour_seen]
 
     session[:project_tour_seen] = true if @show_project_tour
 
@@ -132,8 +133,8 @@ class ProjectsController < ApplicationController
     # session flag) so it keeps prompting until the user links a project.
     @show_first_hackatime_tour = current_user.present? && @is_member &&
                                  @hackatime_linked &&
-                                 current_user.projects.count == 1 &&
-                                 @project.hackatime_keys.blank? &&
+                                 current_user_project_count == 1 &&
+                                 @linked_hackatime_projects.blank? &&
                                  !@show_project_tour
 
     if current_user
@@ -153,9 +154,7 @@ class ProjectsController < ApplicationController
 
     @votes_for_payout = nil
     if current_user.present?
-      is_owner = @project.memberships.where(role: :owner, user_id: current_user.id).exists?
-
-      if is_owner &&
+      if @project_owner == current_user &&
           latest_ship_event.present? &&
           latest_ship_event.certification_status == "approved" &&
           latest_ship_event.payout.blank? &&
@@ -184,10 +183,6 @@ class ProjectsController < ApplicationController
       return
     end
 
-    # NB: query the table directly rather than current_user.hackatime_projects —
-    # that reader is overridden (User::HackatimeSync) to only surface real synced
-    # projects, so it would never find the test-time row and a second click would
-    # try to insert a duplicate, tripping the (user_id, name) uniqueness check.
     hackatime_project = User::HackatimeProject.find_or_initialize_by(user: current_user, name: test_time_hackatime_project_name)
     hackatime_project.project = @project
     hackatime_project.save!

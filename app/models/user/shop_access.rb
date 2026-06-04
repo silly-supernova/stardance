@@ -1,5 +1,4 @@
 module User::ShopAccess
-  # this needs more work
   extend ActiveSupport::Concern
 
   def seller? = ShopItem::HackClubberItem.exists?(user_id: id)
@@ -24,25 +23,25 @@ module User::ShopAccess
   end
 
   def addresses
-    identity = hack_club_identity
-    return [] unless identity&.access_token.present?
-
-    identity_payload = HCAService.identity(identity.access_token)
-    addresses = identity_payload["addresses"] || []
-    phone_number = identity_payload["phone_number"]
-    addresses.map { |address| address.merge("phone_number" => phone_number) }
+    addresses = hca_identity_payload["addresses"] || []
+    addresses.map { |address| address.merge("phone_number" => hca_identity_payload["phone_number"]) }
   end
 
   def birthday
-    identity = hack_club_identity
-    return nil unless identity&.access_token.present?
-
-    identity_payload = HCAService.identity(identity.access_token)
-    birthday_str = identity_payload["birthday"]
+    birthday_str = hca_identity_payload["birthday"]
     return nil if birthday_str.blank?
 
     Date.parse(birthday_str)
   rescue ArgumentError
     nil
   end
+
+  private
+    def hca_identity_payload
+      @hca_identity_payload ||= if (identity = hack_club_identity)&.access_token.present?
+        HCAService.identity(identity.access_token)
+      else
+        {}
+      end
+    end
 end

@@ -43,6 +43,7 @@ class Shop::ItemsController < Shop::BaseController
     end
 
     @user_region = user_region
+    @user_balance = current_user&.cached_balance || 0
 
     if tutorial_step = required_tutorial_step(@shop_item)
       render tutorial_step, layout: "application"

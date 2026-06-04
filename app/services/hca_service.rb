@@ -74,7 +74,10 @@ module HCAService
   end
 
   def connection
-    @connection ||= Faraday.new(url: host)
+    @connection ||= Faraday.new(url: host) do |f|
+      f.options.open_timeout = 2
+      f.options.timeout = 5
+    end
   end
 
   def check_connection

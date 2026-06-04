@@ -5,10 +5,6 @@ module User::HackatimeSync
     try_sync_hackatime_data!&.dig(:projects)&.values&.sum || 0
   end
 
-  def has_logged_one_hour?
-    all_time_coding_seconds >= 3600
-  end
-
   def try_sync_hackatime_data!(force: false)
     return @hackatime_data if @hackatime_data && !force
     return nil unless hackatime_identity
@@ -29,19 +25,5 @@ module User::HackatimeSync
     end
 
     @hackatime_data = result
-  end
-
-  # Overrides the association reader so forms show the latest synced projects
-  # with zero-second entries filtered out.
-  def hackatime_projects
-    projects = super
-    synced_data = try_sync_hackatime_data!
-    return projects unless synced_data
-
-    project_times = synced_data[:projects] || {}
-    project_names_with_time = project_times.select { |_name, seconds| seconds.to_i > 0 }.keys
-    return projects.none if project_names_with_time.empty?
-
-    projects.where(name: project_names_with_time)
   end
 end

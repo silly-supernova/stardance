@@ -123,6 +123,8 @@ class HackatimeService
 
       def connection
         @connection ||= Faraday.new(url: "#{BASE_URL}/api/v1") do |conn|
+          conn.options.open_timeout = 2
+          conn.options.timeout = 5
           conn.headers["Content-Type"] = "application/json"
           conn.headers["User-Agent"] = Rails.application.config.user_agent
           conn.headers["RACK_ATTACK_BYPASS"] = ENV["HACKATIME_BYPASS_KEYS"] if ENV["HACKATIME_BYPASS_KEYS"].present?

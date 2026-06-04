@@ -3,9 +3,9 @@
 <% content_for :og_description, truncate(@project.display_description.to_s, length: 200) %>
 <% content_for :og_image, project_og_image_url(@project, format: :png) %>
 <% content_for :twitter_card, "summary_large_image" %>
-<% content_for :og_author, @project.memberships.find_by(role: :owner)&.user&.display_name %>
+<% content_for :og_author, @project_owner&.display_name %>
 
-<% owner = @project.memberships.find_by(role: :owner)&.user %>
+<% owner = @project_owner %>
 <% if owner&.preference&.search_engine_indexing_off? %>
   <% content_for :head do %>
     <meta name="robots" content="noindex, nofollow">
@@ -780,7 +780,7 @@
                     multipart: true,
                     data: { turbo: false, action: "paste->composer#paste" },
                     html: { class: "ship-modal__form" } do |form| %>
-        <% ship_mission = @project.current_mission %>
+        <% ship_mission = @current_mission %>
         <% ship_to_mission = ship_mission && !@project.shipped_to_mission?(ship_mission) %>
 
         <% if ship_to_mission %>
@@ -898,7 +898,7 @@
     </dialog>
   <% end %>
 
-  <% if @is_member && @project.current_mission.nil? && !@project.shipped? %>
+  <% if @is_member && @current_mission.nil? && !@project.shipped? %>
     <%= render layout: "shared/modal", locals: { id: "mission-browse-modal", title: "Browse missions", class_name: "mission-browse-modal" } do %>
       <% if @available_missions.any? %>
         <ul class="mission-browse-modal__grid">

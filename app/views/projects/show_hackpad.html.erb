@@ -3,9 +3,9 @@
 <% content_for :og_description, truncate(@project.display_description.to_s, length: 200) %>
 <% content_for :og_image, project_og_image_url(@project, format: :png) %>
 <% content_for :twitter_card, "summary_large_image" %>
-<% content_for :og_author, @project.memberships.find_by(role: :owner)&.user&.display_name %>
+<% content_for :og_author, @project_owner&.display_name %>
 
-<% owner = @project.memberships.find_by(role: :owner)&.user %>
+<% owner = @project_owner %>
 <% if owner&.preference&.search_engine_indexing_off? %>
   <% content_for :head do %>
     <meta name="robots" content="noindex, nofollow">
@@ -758,7 +758,7 @@
             data-composer-target="dropZone"
             data-action="drop->composer#drop dragover->composer#dragover dragleave->composer#dragleave"
             aria-label="Ship your project">
-      <% ship_mission = @project.current_mission %>
+      <% ship_mission = @current_mission %>
       <% ship_to_mission = ship_mission && !@project.shipped_to_mission?(ship_mission) %>
 
       <%= form_with url: project_ships_path(@project),

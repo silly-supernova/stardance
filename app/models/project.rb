@@ -106,11 +106,11 @@ class Project < ApplicationRecord
   has_many :mission_submissions,         class_name: "Mission::Submission",         through: :ship_events
 
   def current_mission_attachment
-    mission_attachments.where(detached_at: nil).order(attached_at: :desc).first
+    @current_mission_attachment ||= mission_attachments.where(detached_at: nil).order(attached_at: :desc).first
   end
 
   def current_mission
-    current_mission_attachment&.mission
+    @current_mission ||= current_mission_attachment&.mission
   end
 
   def display_banner
@@ -458,7 +458,7 @@ class Project < ApplicationRecord
   end
 
   def last_ship_event
-    ship_events.first
+    @last_ship_event ||= ship_events.first
   end
 
   def has_legacy_ship_events?
