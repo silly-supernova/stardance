@@ -2,7 +2,7 @@ module ApplicationHelper
   def in_beta? = request.host.include?("beta")
 
   def main_app_base_url
-    host = request.host.sub(/\Araffle\./, "")
+    host = request.host.sub(/\Asignup-raffle\./, "")
     port = request.port
     scheme = request.scheme
     port_suffix = [ 80, 443 ].include?(port) ? "" : ":#{port}"
@@ -10,11 +10,11 @@ module ApplicationHelper
   end
 
   def raffle_base_url
-    host = request.host.sub(/\Araffle\./, "")
+    host = request.host.sub(/\Asignup-raffle\./, "")
     port = request.port
     scheme = request.scheme
     port_suffix = [ 80, 443 ].include?(port) ? "" : ":#{port}"
-    "#{scheme}://raffle.#{host}#{port_suffix}"
+    "#{scheme}://signup-raffle.#{host}#{port_suffix}"
   end
 
   def stardust_icon(extra_class: nil)
