@@ -121,7 +121,9 @@ class Mission < ApplicationRecord
     guide_variants.order(:position, :id).first
   end
 
-  def has_guide? = guide_variants.any?
+  def has_guide? = guide_variants.any? || guide_url.present?
+
+  def external_guide? = guide_url.present?
 
   def available_languages
     guide_variants.order(:position, :id).pluck(:language)

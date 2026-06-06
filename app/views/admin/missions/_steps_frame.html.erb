@@ -22,6 +22,20 @@
       </button>
     </header>
 
+    <div class="admin-mission-edit__guide-url-form">
+      <%= form_with model: mission, url: admin_mission_path(mission.slug), method: :patch, local: true, class: "admin-mission-edit__form" do |f| %>
+        <label>
+          External guide URL
+          <small class="admin-mission-edit__hint">
+            If set, all "View guide" links point to this URL instead of the
+            built-in guide below. Leave blank to use the on-platform guide.
+          </small>
+          <%= f.url_field :guide_url, placeholder: "https://..." %>
+        </label>
+        <%= f.submit "Save guide URL", class: "action-btn action-btn--small action-btn--primary" %>
+      <% end %>
+    </div>
+
     <% if available_languages.any? %>
       <nav class="admin-mission-edit__lang-tabs" aria-label="Guide language">
         <% available_languages.each do |lang| %>

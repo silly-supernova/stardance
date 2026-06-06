@@ -100,7 +100,9 @@
           <% end %>
           <% if @mission.has_guide? %>
             <%= link_to (@active_project ? "View guide" : "Preview guide"),
-                        guide_mission_path(@mission.slug),
+                        @mission.external_guide? ? @mission.guide_url : guide_mission_path(@mission.slug),
+                        target: @mission.external_guide? ? "_blank" : nil,
+                        rel: @mission.external_guide? ? "noopener" : nil,
                         data: { turbo: false },
                         class: "action-btn action-btn--large action-btn--secondary" %>
           <% end %>
