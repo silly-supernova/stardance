@@ -21,6 +21,11 @@ class Projects::ShipsController < ApplicationController
     probe_result = reship ? ProjectUrlProbeService.new(@project).call : nil
 
     @project.with_lock do
+      latest_review = @project.ship_reviews.order(created_at: :desc).first
+      if latest_review&.pending?
+        redirect_to project_path(@project), alert: "A review is already pending for this project." and return
+      end
+
       @project.submit_for_review!
       ship_event = Post::ShipEvent.new(body: params[:ship_update].to_s.strip)
       ship_event.uploading_attachments = params.dig(:ship_event, :attachments).present?
