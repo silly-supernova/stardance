@@ -358,6 +358,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_08_170638) do
     t.index ["user_id"], name: "index_mission_memberships_on_user_id"
   end
 
+  create_table "mission_prerequisites", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "dependent_mission_id", null: false
+    t.bigint "prerequisite_mission_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["dependent_mission_id"], name: "index_mission_prerequisites_on_dependent_mission_id"
+    t.index ["prerequisite_mission_id", "dependent_mission_id"], name: "idx_mission_prereqs_unique", unique: true
+    t.index ["prerequisite_mission_id"], name: "index_mission_prerequisites_on_prerequisite_mission_id"
+  end
+
   create_table "mission_prizes", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.datetime "deleted_at"
@@ -456,6 +466,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_08_170638) do
     t.datetime "end_at"
     t.integer "estimated_completion_minutes"
     t.datetime "featured_at"
+    t.integer "fixed_stardust_payout"
+    t.integer "guide_sections_count"
+    t.string "guide_url"
     t.string "name", null: false
     t.integer "prizes_count", default: 0, null: false
     t.string "slug", null: false
@@ -1143,6 +1156,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_08_170638) do
 
   create_table "users", force: :cascade do |t|
     t.string "age_attestation"
+    t.integer "approx_balance", default: 0, null: false
+    t.integer "approx_total_earned", default: 0, null: false
     t.boolean "banned", default: false, null: false
     t.datetime "banned_at"
     t.text "banned_reason"
@@ -1188,6 +1203,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_08_170638) do
     t.boolean "ysws_eligible", default: false, null: false
     t.index "lower((display_name)::text)", name: "index_users_on_lower_display_name_unique", unique: true, where: "((display_name IS NOT NULL) AND ((display_name)::text <> ''::text))"
     t.index "lower((email)::text)", name: "index_users_on_lower_email_unique", unique: true, where: "((email IS NOT NULL) AND ((email)::text <> ''::text))"
+    t.index ["approx_balance"], name: "index_users_on_approx_balance", order: :desc
+    t.index ["approx_total_earned"], name: "index_users_on_approx_total_earned", order: :desc
     t.index ["email"], name: "index_users_on_email"
     t.index ["onboarded_at"], name: "index_users_on_onboarded_at"
     t.index ["session_token"], name: "index_users_on_session_token", unique: true
@@ -1276,6 +1293,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_08_170638) do
   add_foreign_key "mission_guide_variants", "missions"
   add_foreign_key "mission_memberships", "missions"
   add_foreign_key "mission_memberships", "users"
+  add_foreign_key "mission_prerequisites", "missions", column: "dependent_mission_id"
+  add_foreign_key "mission_prerequisites", "missions", column: "prerequisite_mission_id"
   add_foreign_key "mission_prizes", "missions"
   add_foreign_key "mission_prizes", "shop_items"
   add_foreign_key "mission_section_completions", "mission_steps", on_delete: :cascade
@@ -1307,8 +1326,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_08_170638) do
   add_foreign_key "projects", "users", column: "marked_fire_by_id"
   add_foreign_key "projects", "users", column: "nominated_fire_by_id"
   add_foreign_key "raffle_participants", "raffle_weeks", column: "signup_week_id"
+  add_foreign_key "raffle_participants", "users"
   add_foreign_key "raffle_referrals", "raffle_participants", column: "participant_id"
   add_foreign_key "raffle_referrals", "raffle_weeks", column: "credited_week_id"
+  add_foreign_key "raffle_referrals", "users", column: "referred_user_id"
   add_foreign_key "raffle_weeks", "raffle_participants", column: "winner_participant_id"
   add_foreign_key "report_review_tokens", "project_reports", column: "report_id"
   add_foreign_key "reviewer_payout_requests", "users"

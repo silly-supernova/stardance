@@ -4,6 +4,8 @@
 #
 #  id                           :bigint           not null, primary key
 #  age_attestation              :string
+#  approx_balance               :integer          default(0), not null
+#  approx_total_earned          :integer          default(0), not null
 #  banned                       :boolean          default(FALSE), not null
 #  banned_at                    :datetime
 #  banned_reason                :text
@@ -50,8 +52,9 @@
 #
 # Indexes
 #
+#  index_users_on_approx_balance             (approx_balance)
+#  index_users_on_approx_total_earned        (approx_total_earned)
 #  index_users_on_email                      (email)
-#  index_users_on_guest_email                (guest_email)
 #  index_users_on_lower_display_name_unique  (lower((display_name)::text)) UNIQUE WHERE ((display_name IS NOT NULL) AND ((display_name)::text <> ''::text))
 #  index_users_on_lower_email_unique         (lower((email)::text)) UNIQUE WHERE ((email IS NOT NULL) AND ((email)::text <> ''::text))
 #  index_users_on_onboarded_at               (onboarded_at)
@@ -104,6 +107,9 @@ class User < ApplicationRecord
   has_many :shop_wishlists, dependent: :destroy
   has_many :wishlisted_shop_items, through: :shop_wishlists, source: :shop_item
   has_many :sold_items, class_name: "ShopItem::HackClubberItem", foreign_key: :user_id
+
+  has_one :raffle_participant, class_name: "Raffle::Participant", dependent: :destroy
+  has_one :raffle_referral_as_referred, class_name: "Raffle::Referral", foreign_key: :referred_user_id, dependent: :destroy
 
   has_one_attached :banner
 
@@ -159,7 +165,10 @@ class User < ApplicationRecord
   validate :interests_must_be_allowed
   after_commit :enqueue_geocode_job, on: :create
 
-  scope :discoverable, -> { joins(:hack_club_identity).distinct }
+  scope :discoverable, -> { where(banned: false).joins(:hack_club_identity).distinct }
+  scope :on_leaderboard, -> {
+    discoverable.joins(:preference).where(user_preferences: { leaderboard_optin: true })
+  }
   scope :ambassador_referrals, -> {
     where(arel_table[:ref].lower.matches("#{Rsvp::AMBASSADOR_REFERRAL_PREFIX}%"))
   }

@@ -179,11 +179,16 @@
   white-space: nowrap;
 }
 
+.discover-rail__widgets {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
 .discover-rail__section {
   display: flex;
   flex-direction: column;
   gap: 11px;
-  margin-top: 7px;
 }
 
 .discover-rail__heading {

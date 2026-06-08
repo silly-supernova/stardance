@@ -1,4 +1,6 @@
 class ProjectsController < ApplicationController
+  include TimelinePostPreloading
+
   # Mission + payout-votes render as discover-rail modules on the project page.
   # The expanded mission module also previews the next guide step.
   discover_rail_widgets :project_mission_expanded, :mission_browse, :ship_intro, :payout_votes,
@@ -30,7 +32,7 @@ class ProjectsController < ApplicationController
   end
 
   def prepare_project_show_context
-    @members = @project.users.to_a
+    @members = @project.users.where(banned: false).to_a
     @is_member = current_user && @members.include?(current_user)
     @active_nav_slug = @is_member ? "projects" : "home"
     @can_edit_project = @is_member && policy(@project).update?
@@ -75,13 +77,15 @@ class ProjectsController < ApplicationController
     load_posts = ->(include_deleted_devlogs: false) {
       scope = @project.posts
                        .visible_to(current_user)
-                       .includes(postable: [ :attachments_attachments ])
+                       .preload(:postable)
                        .order(created_at: :desc)
       unless include_deleted_devlogs
         scope = scope.joins("LEFT JOIN post_devlogs ON posts.postable_type = 'Post::Devlog' AND posts.postable_id = post_devlogs.id")
                      .where("posts.postable_type != 'Post::Devlog' OR post_devlogs.deleted_at IS NULL")
       end
-      scope.select { |post| post.postable.present? }
+      posts = scope.select { |post| post.postable.present? }
+      preload_timeline_postables(posts, project_context: true)
+      posts
     }
 
     @posts = if policy(@project).view_deleted_devlogs?
@@ -153,7 +157,9 @@ class ProjectsController < ApplicationController
       if is_owner &&
           latest_ship_event.present? &&
           latest_ship_event.certification_status == "approved" &&
-          latest_ship_event.payout.blank?
+          latest_ship_event.payout.blank? &&
+          latest_ship_event.mission_submission&.payout_path != "static_prize" &&
+          !latest_ship_event.mission_submission&.rejected?
 
         required = Post::ShipEvent::VOTES_REQUIRED_FOR_PAYOUT
         current = latest_ship_event.votes.payout_countable.count
@@ -391,7 +397,7 @@ class ProjectsController < ApplicationController
   def followers
     @project = Project.find(params[:id])
     authorize @project, :show?
-    @followers = @project.followers.order(:display_name)
+    @followers = @project.followers.where(banned: false).order(:display_name)
     render "users/followers", layout: false
   end
 

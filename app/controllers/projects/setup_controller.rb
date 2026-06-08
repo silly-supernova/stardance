@@ -82,6 +82,11 @@ class Projects::SetupController < ApplicationController
       redirect_to projects_setup_missions_path, alert: "That mission isn't available." and return
     end
 
+    unless mission.prerequisites_met_by?(current_user)
+      unmet = mission.unmet_prerequisites_for(current_user).map(&:name).to_sentence
+      redirect_to mission_path(mission.slug), alert: "Complete #{unmet} first to unlock this mission." and return
+    end
+
     existing = project.mission_attachments.find_by(mission_id: mission.id)
 
     if existing&.detached_at.nil? && existing.present?

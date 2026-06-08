@@ -113,12 +113,20 @@ class Project < ApplicationRecord
     current_mission_attachment&.mission
   end
 
+  def display_banner
+    if banner.attached?
+      banner
+    elsif current_mission&.banner&.attached?
+      current_mission.banner
+    end
+  end
+
   # True once this project has shipped to the given mission at least once.
   # After that first ship the mission stays attached (for display) but future
   # ships are regular, non-mission ships.
   def shipped_to_mission?(mission)
     return false if mission.nil?
-    mission_submissions.where(mission_id: mission.id).exists?
+    mission_submissions.where(mission_id: mission.id).where.not(status: "rejected").exists?
   end
 
   # needs to be implemented
@@ -269,6 +277,10 @@ class Project < ApplicationRecord
 
     event :return_for_changes do
       transitions from: :under_review, to: :needs_changes
+    end
+
+    event :resubmit_for_review do
+      transitions from: :needs_changes, to: :submitted
     end
   end
 
@@ -562,7 +574,11 @@ class Project < ApplicationRecord
 
   def previous_ship_event_has_payout?
     return true if last_ship_event.nil?
-    last_ship_event.payout.present?
+    return true if last_ship_event.payout.present?
+    sub = last_ship_event.mission_submission
+    return true if sub&.payout_path == "static_prize"
+    return true if sub&.rejected?
+    false
   end
 
   def notify_slack_channel

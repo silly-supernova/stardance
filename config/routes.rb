@@ -594,6 +594,7 @@ Rails.application.routes.draw do
         resource  :verification,        only: [ :create ]
         resource  :vote_balance,        only: [ :update ]
         resource  :ysws_override,       only: [ :update ]
+        resources :identities,          only: [ :destroy ]
         resources :votes,               only: [ :index ]
       end
     end
@@ -621,6 +622,7 @@ Rails.application.routes.draw do
         member do
           post :close
           post :draw
+          post :void_draw
         end
       end
     end
@@ -781,6 +783,7 @@ Rails.application.routes.draw do
     resources :reports, only: [ :create ], module: :projects
     resource :og_image, only: [ :show ], module: :projects, defaults: { format: :png }
     resource :ships, only: [ :create ], module: :projects
+    resource :recertification, only: [ :create ], module: :projects
     resource :mission, only: [ :create, :destroy ], module: :projects, controller: "missions"
     resource :magic, only: [ :create, :destroy ], module: :projects, controller: "magic"
     resource :fire_nomination, only: [ :create, :destroy ], module: :projects
