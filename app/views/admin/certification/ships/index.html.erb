@@ -133,32 +133,6 @@
             <% end %>
           </ol>
         <% end %>
-      <% if @type_counts.any? %>
-        <div class="ship-queue__types">
-          <span class="ship-queue__label">Type breakdown</span>
-          <div class="ship-queue__type-chips">
-            <% @type_counts.sort_by { |_, count| -count }.each do |type, count| %>
-              <% label      = type.present? ? type : "Unclassified" %>
-              <% filter_val = type.present? ? type : "unclassified" %>
-              <% is_active  = @project_type == filter_val %>
-              <%= link_to admin_certification_ships_path(
-                    status: @status, sort: @sort, search: @search.presence,
-                    from: @from&.iso8601, to: @to&.iso8601, project_type: filter_val
-                  ),
-                  class: "ship-queue__type-chip #{"is-active" if is_active}",
-                  aria: { pressed: is_active } do %>
-                <%= label %><span class="ship-queue__type-chip-count"><%= count %></span>
-              <% end %>
-            <% end %>
-            <% if @project_type.present? %>
-              <%= link_to "clear", admin_certification_ships_path(
-                    status: @status, sort: @sort, search: @search.presence,
-                    from: @from&.iso8601, to: @to&.iso8601
-                  ), class: "ship-queue__type-clear" %>
-            <% end %>
-          </div>
-        </div>
-      <% end %>
       </div>
     </section>
 
