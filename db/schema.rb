@@ -637,7 +637,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_04_201158) do
     t.integer "memberships_count", default: 0, null: false
     t.datetime "nominated_fire_at"
     t.bigint "nominated_fire_by_id"
-    t.string "project_categories", default: [], array: true
     t.string "project_type"
     t.text "readme_url"
     t.text "repo_url"
