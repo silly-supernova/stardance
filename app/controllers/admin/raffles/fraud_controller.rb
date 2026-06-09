@@ -120,7 +120,7 @@ module Admin
             signals: data[:signals],
             total_referrals: referral_counts[pid] || 0
           }
-        end.sort_by { |r| [-r[:total_referrals], -r[:signals].sum { |s| s[:weight] }] }
+        end.sort_by { |r| [ -r[:total_referrals], -r[:signals].sum { |s| s[:weight] } ] }
       end
 
       def add_referred_ip_signals(signals)
@@ -307,13 +307,11 @@ module Admin
       ].freeze
 
       def add_disposable_email_signals(signals)
-        placeholders = DISPOSABLE_DOMAINS.map { |d| ActiveRecord::Base.connection.quote(d) }.join(", ")
-
         rows = Raffle::Referral
           .where(ACTIVE_REFERRAL)
           .joins(BASE_JOINS)
           .where(ELIGIBLE_PARTICIPANT).where(NOT_BANNED_REFERRER)
-          .where("LOWER(SPLIT_PART(referred.email, '@', 2)) IN (#{placeholders})")
+          .where("LOWER(SPLIT_PART(referred.email, '@', 2)) IN (?)", DISPOSABLE_DOMAINS)
           .group("raffle_referrals.participant_id")
           .pluck(Arel.sql("raffle_referrals.participant_id"), Arel.sql("COUNT(*)"))
 

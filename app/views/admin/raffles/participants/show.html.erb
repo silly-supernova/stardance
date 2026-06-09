@@ -44,12 +44,6 @@
           ban_user_admin_raffles_participant_path(@participant),
           class: "btn-danger slim",
           data: { turbo_confirm: "Ban #{@participant.display_name} from the platform? Rejects shop orders and deletes projects." } %>
-    <% end %>
-    <% if @participant.user && !@participant.user.banned? %>
-      <%= button_to "Ban user from platform",
-          ban_user_admin_raffles_participant_path(@participant),
-          class: "btn-danger slim",
-          data: { turbo_confirm: "Ban #{@participant.display_name} from the entire platform? Rejects shop orders and deletes projects." } %>
     <% elsif @participant.user&.banned? %>
       <span class="badge badge-rejected">user banned</span>
     <% end %>
