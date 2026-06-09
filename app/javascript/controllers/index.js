@@ -13,6 +13,9 @@ application.register("address-select", AddressSelectController);
 import BioEditorController from "./bio_editor_controller";
 application.register("bio-editor", BioEditorController);
 
+import BulkSelectController from "./bulk_select_controller";
+application.register("bulk-select", BulkSelectController);
+
 import Certification__Ysws__CompleteReviewController from "./certification/ysws/complete_review_controller";
 application.register(
   "certification--ysws--complete-review",

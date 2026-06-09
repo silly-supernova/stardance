@@ -3,6 +3,7 @@ module Admin
     class ParticipantsController < Admin::ApplicationController
       before_action :set_participant, only: [
         :show, :reject_referrals, :ban_participant, :ban_user, :ban_referred_users,
+        :reject_selected, :ban_selected,
         :reject_referral, :ban_referred_user, :clear_fraud, :unclear_fraud
       ]
 
@@ -124,6 +125,58 @@ module Admin
                       notice: "Rejected #{rejected} referral(s), banned #{banned} user(s)."
       end
 
+      # ── Checkbox bulk actions ──────────────────────────────────────────
+
+      def reject_selected
+        authorize :admin, :access_raffles?
+
+        referrals = selected_referrals
+        return redirect_to admin_raffles_participant_path(@participant), alert: "Nothing selected." if referrals.empty?
+
+        count = 0
+        ::PaperTrail.request(whodunnit: current_user.id) do
+          referrals.each do |referral|
+            referral.paper_trail_event = "fraud_bulk_reject"
+            referral.update!(status: :rejected, credited_week: nil)
+            count += 1
+          end
+        end
+
+        redirect_to admin_raffles_participant_path(@participant), notice: "Rejected #{count} referral(s)."
+      end
+
+      def ban_selected
+        authorize :admin, :access_raffles?
+
+        referrals = selected_referrals
+        return redirect_to admin_raffles_participant_path(@participant), alert: "Nothing selected." if referrals.empty?
+
+        reason = "Raffle referral fraud (referred by #{@participant.display_name})"
+        rejected = 0
+        banned = 0
+
+        ::PaperTrail.request(whodunnit: current_user.id) do
+          referrals.each do |referral|
+            referral.paper_trail_event = "fraud_bulk_reject"
+            referral.update!(status: :rejected, credited_week: nil)
+            rejected += 1
+
+            user = referral.referred_user
+            next unless user && !user.banned?
+            user.ban!(reason: reason)
+            ::PaperTrail::Version.create!(
+              item_type: "User", item_id: user.id, event: "banned",
+              whodunnit: current_user.id.to_s,
+              object_changes: { banned: [ false, true ], banned_reason: [ nil, reason ] }.to_json
+            )
+            banned += 1
+          end
+        end
+
+        redirect_to admin_raffles_participant_path(@participant),
+                    notice: "Rejected #{rejected} referral(s), banned #{banned} user(s)."
+      end
+
       # ── Per-referral actions (stay on participant page) ────────────────
 
       def reject_referral
@@ -197,6 +250,14 @@ module Admin
 
       def set_participant
         @participant = ::Raffle::Participant.find(params[:id])
+      end
+
+      def selected_referrals
+        ids = params[:referral_ids]
+        return [] unless ids.is_a?(Array)
+        @participant.referrals
+                    .where(id: ids.map(&:to_i))
+                    .where.not(status: [ :self_referral, :rejected ])
       end
 
       def participants_scope

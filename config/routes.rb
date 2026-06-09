@@ -627,6 +627,8 @@ Rails.application.routes.draw do
           post :ban_participant
           post :ban_user
           post :ban_referred_users
+          post :reject_selected
+          post :ban_selected
           post :reject_referral
           post :ban_referred_user
           post :clear_fraud

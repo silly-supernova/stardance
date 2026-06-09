@@ -1497,3 +1497,41 @@ dialog {
   font-weight: 400;
   opacity: 0.7;
 }
+
+.fraud-select-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-m);
+  margin-bottom: var(--space-s);
+}
+
+.fraud-select-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: var(--font-size-s);
+  cursor: pointer;
+}
+
+.fraud-select-meta {
+  font-size: var(--font-size-s);
+  color: var(--color-space-text-muted);
+}
+
+.fraud-select-count {
+  font-size: var(--font-size-s);
+  font-weight: 600;
+  color: var(--color-space-text);
+}
+
+.fraud-bulk-form {
+  display: inline;
+}
+
+.fraud-check-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  cursor: pointer;
+}
