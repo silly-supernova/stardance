@@ -211,7 +211,7 @@
             <% @gallery_projects.each do |project| %>
               <div class="mission-home__gallery-item" role="listitem">
                 <% if @approved_project_ids.include?(project.id) %>
-                  <span class="mission-home__gallery-badge mission-home__gallery-badge--approved">Approved</span>
+                  <span class="mission-home__gallery-badge mission-home__gallery-badge--approved">Completed</span>
                 <% else %>
                   <span class="mission-home__gallery-badge mission-home__gallery-badge--in-progress">In progress</span>
                 <% end %>
