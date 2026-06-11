@@ -9,11 +9,13 @@
 #  feedback         :text
 #  internal_reason  :text
 #  lock_version     :integer          default(0), not null
+#  recert_reason    :text
 #  stardust_earned  :integer
 #  status           :integer          default("pending"), not null
 #  created_at       :datetime         not null
 #  updated_at       :datetime         not null
 #  project_id       :bigint           not null
+#  returned_by_id   :bigint
 #  reviewer_id      :bigint
 #
 # Indexes
@@ -36,6 +38,7 @@ module Certification
 
     belongs_to :project
     belongs_to :reviewer, class_name: "User", optional: true
+    belongs_to :returned_by, class_name: "User", optional: true
 
     has_paper_trail
 
@@ -49,12 +52,35 @@ module Certification
     }, default: :pending
 
     ACCEPTED_VIDEO_TYPES = %w[video/mp4 video/webm video/quicktime].freeze
-    MAX_VIDEO_SIZE = 250.megabytes
+
+    # Canned request-changes responses offered on the review form. The opener
+    # is the standard wording Shipwrights use for low-quality submissions;
+    # reviewers replace the bullets with the specific changes they want.
+    FEEDBACK_TEMPLATES = [
+      {
+        label: "Doesn't meet quality standards",
+        body: <<~TEXT.strip
+          Hey! Thanks for shipping your project. It's not quite ready for voting yet, so here's what we'd like you to change:
+          - Change 1
+          - Change 2
+          - Change 3
+          Once you've made these, ship it again and we'll take another look!
+        TEXT
+      },
+      {
+        label: "AI-generated look & feel",
+        body: <<~TEXT.strip
+          Hey! Thanks for shipping your project. It's not quite ready for voting yet, so here's what we'd like you to change:
+          - Rework the CSS, right now it looks like every other AI-made site. Give it your own style.
+          - Add a couple of features you came up with yourself to make it more fun to use.
+          Once you've made these, ship it again and we'll take another look!
+        TEXT
+      }
+    ].freeze
 
     validates :feedback, length: { maximum: 10_000 }, allow_blank: true
     validates :verdict_video,
-              content_type: { in: ACCEPTED_VIDEO_TYPES, spoofing_protection: true },
-              size: { less_than: MAX_VIDEO_SIZE, message: "is too large (max 250 MB)" }
+              content_type: { in: ACCEPTED_VIDEO_TYPES, spoofing_protection: true }
 
     scope :for_reviewer, ->(user) {
       joins(:project)
