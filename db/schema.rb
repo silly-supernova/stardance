@@ -614,6 +614,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_10_172657) do
     t.index ["mission_id"], name: "index_project_mission_attachments_on_mission_id"
     t.index ["project_id", "mission_id"], name: "index_project_mission_attachments_active", unique: true, where: "((detached_at IS NULL) AND (deleted_at IS NULL))"
     t.index ["project_id"], name: "index_project_mission_attachments_on_project_id"
+    t.index ["project_id"], name: "index_project_mission_attachments_one_active", unique: true, where: "((detached_at IS NULL) AND (deleted_at IS NULL))"
   end
 
   create_table "project_reports", force: :cascade do |t|
