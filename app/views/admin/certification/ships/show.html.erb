@@ -127,7 +127,10 @@
                       </span>
                     </div>
                     <div class="submitter-history__card-meta">
-                      <%= review.project.title %>
+                      <%= review.project_with_deleted.title %>
+                      <% if review.project_with_deleted.deleted? %>
+                        <span class="submitter-history__card-deleted">(deleted)</span>
+                      <% end %>
                       <% if review.returned? && review.returned_by %>
                         &middot; returned by <%= review.returned_by.display_name %>
                       <% elsif review.decided_at && review.reviewer %>

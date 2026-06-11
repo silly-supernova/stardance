@@ -352,6 +352,11 @@
     overflow-wrap: anywhere;
   }
 
+  &__card-deleted {
+    font-weight: 400;
+    color: var(--color-brand-salmon);
+  }
+
   &__card-feedback {
     margin: var(--space-xs) 0 0;
     font-size: 0.85rem;
