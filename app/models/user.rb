@@ -277,18 +277,20 @@ class User < ApplicationRecord
   end
 
   # Fires the Outpost email at most once per user, and adds them to the #outpost
-  # Slack channel. Uses a conditional UPDATE so concurrent /outpost hits can't
-  # enqueue the work twice.
+  # Slack channel. Locks the row so concurrent /outpost hits can't enqueue the
+  # work twice.
   def deliver_outpost_email!
-    return if outpost_email_sent_at.present? || email.blank?
+    return if email.blank?
 
-    claimed = self.class.where(id: id, outpost_email_sent_at: nil)
-                  .update_all(outpost_email_sent_at: Time.current)
-    return unless claimed == 1
+    with_lock do
+      return if outpost_email_sent_at.present?
 
-    self.outpost_email_sent_at = Time.current
+      update!(outpost_email_sent_at: Time.current)
+    end
+
     UserMailer.outpost(self).deliver_later
-    AddUserToOutpostChannelJob.perform_later(id)
+    # Slack invite temporarily disabled — re-enable to auto-add users to the #outpost channel.
+    # AddUserToOutpostChannelJob.perform_later(id)
   end
 
   private
