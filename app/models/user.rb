@@ -264,6 +264,9 @@ class User < ApplicationRecord
     }
   end
 
+  # The project the user is running this mission with: the actively attached
+  # one, or failing that one that already shipped to it (the attachment may
+  # have moved on to a follow-up mission since).
   def active_project_for_mission(mission)
     return nil if mission.nil?
     projects
@@ -271,10 +274,31 @@ class User < ApplicationRecord
       .where(project_mission_attachments: { mission_id: mission.id, detached_at: nil })
       .where(deleted_at: nil)
       .order("project_mission_attachments.attached_at DESC")
-      .first
+      .first || shipped_project_for_mission(mission)
+  end
+
+  # Missions this user has completed (an approved submission on any of
+  # their projects). The currency for prerequisite checks; memoized because
+  # mission lists filter with prerequisites_met_by? in a loop.
+  def completed_mission_ids
+    @completed_mission_ids ||= Mission::Submission.approved
+                                                  .joins(ship_event: :post)
+                                                  .where(posts: { user_id: id })
+                                                  .distinct
+                                                  .pluck(:mission_id)
   end
 
   private
+
+  def shipped_project_for_mission(mission)
+    projects
+      .joins(:mission_submissions)
+      .merge(Mission::Submission.not_rejected)
+      .where(mission_submissions: { mission_id: mission.id })
+      .where(deleted_at: nil)
+      .order(updated_at: :desc)
+      .first
+  end
 
   def increment_signup_counter
     Rails.cache.increment("landing/signup_count", 1, expires_in: 30.seconds)

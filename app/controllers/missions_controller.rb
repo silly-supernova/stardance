@@ -41,7 +41,7 @@ class MissionsController < ApplicationController
     @approved_project_ids = @mission.approved_submission_project_ids.to_set
     @estimated_label      = @mission.estimated_completion_label
     @active_project       = current_user&.active_project_for_mission(@mission)
-    @progress_state       = compute_progress_state(@mission, @active_project, @guide_outline)
+    @progress_state       = compute_progress_state(@mission, @active_project)
     @unlocked_missions     = @mission.unlocks.enabled.to_a
     @prerequisites_met     = @mission.prerequisites_met_by?(current_user)
     @unmet_prerequisites   = @mission.unmet_prerequisites_for(current_user)
@@ -57,6 +57,7 @@ class MissionsController < ApplicationController
                                          )
                                          .order(updated_at: :desc)
                                          .to_a
+      @continuable_projects = continuable_projects_for(@mission)
     end
   end
 
@@ -98,7 +99,24 @@ class MissionsController < ApplicationController
     @mission = Mission.find_by!(slug: params[:slug])
   end
 
-  def compute_progress_state(mission, project, _outline)
+  # Shipped projects that can continue into this mission because they
+  # shipped to one of its prerequisites (e.g. webOS 1 projects on webOS 2).
+  # Each project carries shipped_prerequisite_mission_id for display.
+  def continuable_projects_for(mission)
+    return [] unless mission.has_prerequisites?
+
+    current_user.projects
+                .where(deleted_at: nil)
+                .joins(:mission_submissions)
+                .merge(Mission::Submission.not_rejected)
+                .where(mission_submissions: { mission_id: mission.prerequisite_ids })
+                .select("projects.*", "mission_submissions.mission_id AS shipped_prerequisite_mission_id")
+                .order(updated_at: :desc)
+                .to_a
+                .uniq(&:id)
+  end
+
+  def compute_progress_state(mission, project)
     return :not_started unless project
 
     ship = project.ship_events
