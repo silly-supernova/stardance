@@ -37,7 +37,7 @@
         <ol>
         <li>Visit the <a href="https://github.com/apps/desktop">download page</a> for GitHub Desktop.</li>
         <li>Click <strong>Download now</strong> and then <strong>Download for Windows</strong>.</li>
-        <li>Double-click the <strong>GitHub Desktop</strong> file that you downloaded to start the installation. It is probably in your computer's <code>Downloads</code> folder.</li>
+        <li>Double-click the <strong>GitHub Desktop</strong> file that you downloaded to start the installation. It is probably in your computer's <code class="guide-code">Downloads</code> folder.</li>
         <li>GitHub Desktop will launch after the installation is complete.</li>
         </ol>
         <h4>To install only the command line version (for advanced users):</h4>
@@ -52,7 +52,7 @@
         <ol>
         <li>Visit the <a href="https://github.com/apps/desktop">download page</a> for GitHub Desktop.</li>
         <li>Click <strong>Download now</strong> and then <strong>Download for MacOS</strong>.</li>
-        <li>Double-click the <strong>GitHub Desktop</strong> file that you downloaded to unzip it. It is probably in your computer's <code>Downloads</code> folder.</li>
+        <li>Double-click the <strong>GitHub Desktop</strong> file that you downloaded to unzip it. It is probably in your computer's <code  class="guide-code">Downloads</code> folder.</li>
         <li>Double click the unzipped <strong>Github Desktop</strong>  file to start the installation.</li>
         <li>Github Desktop will launch after the installation is complete.</li>
         </ol>
@@ -69,7 +69,7 @@
         <p>First, check to see if it is already installed:</p>
         <ol>
         <li>Open the terminal.</li>
-        <li>Run this command: <code>git --version</code>. If it outputs something like <code>git version 2.54.0</code> (the number may be different), then it is installed. If it instead outputs something like <code>Unknown command: git</code>, then it is not installed.</li>
+        <li>Run this command: <code class="guide-code">git --version</code>. If it outputs something like <code class="guide-code">git version 2.54.0</code> (the number may be different), then it is installed. If it instead outputs something like <code class="guide-code">Unknown command: git</code>, then it is not installed.</li>
         </ol>
         <p>To install Git, go to <a href="https://git-scm.com/install/linux">this site</a> and find the command for the distribution of Linux you are using, and run the command in the terminal. <span class="guide-mark">Do not include the hashtag (#) when you type the command</span>. It may ask you for your computer password.</p>
     </div>
@@ -85,7 +85,7 @@
 </ol>
 <h4>If you are using Git through the terminal:</h4>
 <p>Open the terminal app.<br>
-In the terminal, type <code>git clone &lt;URL of Github repository&gt;</code>. Obviously, replace <code>&lt;URL of Github repository&gt;</code> with the URL of your repository, which you copied earlier. Press <span class="guide-kbd">Enter ↩</span>, and Git will clone the repository onto your computer.</p>
+In the terminal, type <code class="guide-code">git clone &lt;URL of Github repository&gt;</code>. Obviously, replace <code class="guide-code">&lt;URL of Github repository&gt;</code> with the URL of your repository, which you copied earlier. Press <span class="guide-kbd">Enter ↩</span>, and Git will clone the repository onto your computer.</p>
 <div class="guide-callout">
     <div class="guide-callout__body">
         <p>💡Tip: Having trouble pasting the URL? Try right clicking and then clicking the paste option, or try doing <span class="guide-kbd">Control+Shift+V</span> instead of <span class="guide-kbd">Control+V</span>.</p>
@@ -102,17 +102,20 @@ In the terminal, type <code>git clone &lt;URL of Github repository&gt;</code>. O
 <p>Make sure all the files are selected (have a checkmark beside them). Then in the little textbox below, put a message summarizing what you changed. If you want to put a longer explanation, put it in the larger textbox right below that. Then press the <strong>commit</strong> button at the bottom!</p>
 <p>You've committed your changes, but the commit is only on your computer, not on the Github website. To upload it to Github (this action is referred to as "pushing" your code), click the <strong>Push origin</strong> button at the top of the app. That's it!</p>
 <p>If you want to see a history of all of your commits/changes, check out the history tab at the top of the sidebar. It will show you every single commit you have ever made, and what you changed in each one!</p>
-<p>:::collapse summary=" Committing your code using the terminal instead of Github Desktop"<br>
-Make sure you put all of your code into the repository folder.<br>
-Navigate into the repository folder in your terminal.</p>
-<ul>
-<li>Type <code>git status</code>. This will show you all the changes that you haven't committed yet.</li>
-<li>To add the files that you changed to the next commit, use <code>git add &lt;file&gt;</code>, replacing <code>&lt;file&gt;</code> with the name of the file you want to add. You can add multiple files at once, just put a space between each one. If you want to add <em>all</em> of the files, do <code>git add .</code>.</li>
-<li>Do <code>git status</code> again to make sure everything looks right.</li>
-<li>To commit, do <code>git commit -m "Summary of changes"</code> replacing <code>Summary of changes</code> with, well, a summary of your changes. If you want to also add a longer description going into more detail about the changes, do <code>git commit -m "Summary of changes" -m "Longer description of changes"</code> instead.</li>
-<li>To upload the changes to the Github Website (the "remote repository"), do <code>git push</code>. It may ask for your Github credentials.<br>
-:::</li>
-</ul>
+<details class="guide-collapse">
+    <summary class="guide-collapse__summary">Committing your code using the terminal instead of Github Desktop</summary>
+    <div class="guide-collapse__body">
+        <p>Make sure you put all of your code into the repository folder.<br>
+        Navigate into the repository folder in your terminal. Then:</p>
+        <ul>
+        <li>Type <code class="guide-code">git status</code>. This will show you all the changes that you haven't committed yet.</li>
+        <li>To add the files that you changed to the next commit, use <code class="guide-code">git add &lt;file&gt;</code>, replacing <code class="guide-code">&lt;file&gt;</code> with the name of the file you want to add. You can add multiple files at once, just put a space between each one. If you want to add <em>all</em> of the files, do <code class="guide-code">git add .</code>.</li>
+        <li>Do <code class="guide-code">git status</code> again to make sure everything looks right.</li>
+        <li>To commit, do <code class="guide-code">git commit -m "Summary of changes"</code> replacing <code class="guide-code">Summary of changes</code> with, well, a summary of your changes. If you want to also add a longer description going into more detail about the changes, do <code class="guide-code">git commit -m "Summary of changes" -m "Longer description of changes"</code> instead.</li>
+        <li>To upload the changes to the Github Website (the "remote repository"), do <code class="guide-code">git push</code>. It may ask for your Github credentials.<br>
+        </ul>
+    </div>
+</details>
 <h3>Link it to Stardance</h3>
 <p>Open your project on Stardance, choose Edit project, and paste the root repository URL into the GitHub URL field.</p>
 <p>Use this shape:</p>
