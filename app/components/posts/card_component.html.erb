@@ -40,7 +40,7 @@
         <% end %>
 
         <time class="feed-post-card__time" datetime="<%= display_post.created_at.iso8601 %>" title="<%= l(display_post.created_at, format: :long) %>">
-          · <%= time_ago_in_words(display_post.created_at) %>
+          · <%= time_ago_in_words(display_post.created_at) %> ago
         </time>
 
         <% if show_idv_badge? %>

@@ -1,21 +1,20 @@
 <%
-  decision = local_assigns.fetch(:decision) { post.postable }
   approved = decision.approved?
   message = if approved
     "This project was vetted by Shipwrights and is now up for voting. You can ship again after making more updates."
   else
     "This needs changes before we can consider it shipped. Review the Shipwright feedback, make updates, then ship again."
   end
-  decided_on = decision.decided_on || post.created_at
+  decided_on = decision.decided_on
   reviewer = decision.reviewer
   reviewer_name = reviewer&.display_name.presence
 %>
 
-<article id="<%= dom_id(post) %>"
+<article id="<%= dom_id(decision) %>"
          class="<%= class_names(
            "feed-post-card",
            "ship-decision-card",
-           "ship-decision-card--#{decision.verdict}"
+           "ship-decision-card--#{decision.status}"
          ) %>">
   <header class="feed-post-card__header">
     <% if reviewer %>
@@ -39,7 +38,7 @@
         <span class="feed-post-card__context"><%= approved ? "approved" : "returned" %></span>
         <span class="ship-decision-card__subject">your project</span>
         <time class="feed-post-card__time" datetime="<%= decided_on.iso8601 %>" title="<%= l(decided_on, format: :long) %>">
-          · <%= time_ago_in_words(decided_on) %>
+          · <%= time_ago_in_words(decided_on) %> ago
         </time>
       </p>
     </div>
@@ -59,8 +58,8 @@
   <% end %>
 
   <% if decision.verdict_video.attached? %>
-    <section class="feed-post-card__body ship-decision-card__video-section" aria-label="Shipwright review video">
-      <p class="ship-decision-card__video-label">Review video</p>
+    <section class="feed-post-card__body ship-decision-card__video-section" aria-label="Shipwright walkthrough video">
+      <p class="ship-decision-card__video-label">Shipwright walkthrough</p>
       <div class="ship-decision-card__video-frame">
         <%= video_tag url_for(decision.verdict_video),
                       controls: true,
