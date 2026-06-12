@@ -99,17 +99,11 @@ class Projects::ShipsController < ApplicationController
         return "static_prize"
       end
       return "voting" unless mission.has_prizes?
-      return "voting" if user_redeemed_prize_for?(mission)
+      return "voting" if current_user.redeemed_prize_for_mission?(mission)
+      # A vote-debt ship only got past the vote_balance gate because the
+      # payout is fixed — it must not enter voting.
+      return "static_prize" if @project.fixed_payout_mission_vote_debt_bypass?
       payout_path_param.to_s == "voting" ? "voting" : "static_prize"
-    end
-
-    def user_redeemed_prize_for?(mission)
-      Mission::Submission
-        .where(mission_id: mission.id)
-        .joins(ship_event: { post: :user })
-        .where(users: { id: current_user.id })
-        .where.not(shop_order_id: nil)
-        .exists?
     end
 
     def create_ysws_review(ship_event)

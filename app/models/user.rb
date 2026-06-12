@@ -321,6 +321,17 @@ class User < ApplicationRecord
                                                   .pluck(:mission_id)
   end
 
+  # Whether the user already redeemed a direct prize for this mission (via any
+  # project) — their next ship to it resolves to the voting payout path.
+  def redeemed_prize_for_mission?(mission)
+    Mission::Submission
+      .where(mission_id: mission.id)
+      .joins(ship_event: { post: :user })
+      .where(users: { id: id })
+      .where.not(shop_order_id: nil)
+      .exists?
+  end
+
   # Fires the Outpost email at most once per user, and adds them to the #outpost
   # Slack channel. Locks the row so concurrent /outpost hits can't enqueue the
   # work twice.

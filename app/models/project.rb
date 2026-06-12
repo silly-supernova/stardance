@@ -517,7 +517,7 @@ class Project < ApplicationRecord
         label: "Maintain a non-negative vote balance",
         fail_label: "Vote at least #{votes_needed} #{'time'.pluralize(votes_needed)} before shipping!",
         tooltip: "Your vote balance has gone negative from downvotes. Earn it back by getting upvotes on your projects.",
-        passed: owner_vote_balance >= 0
+        passed: owner_vote_balance >= 0 || fixed_payout_mission_vote_debt_bypass?
       },
       {
         key: :idv,
@@ -570,6 +570,24 @@ class Project < ApplicationRecord
   def ship_blocker_message
     req = shipping_requirements.find { |r| !r[:passed] }
     req && (req[:fail_label] || req[:label])
+  end
+
+  # TEMPORARY until week_2_release ships: vote debt shouldn't block a
+  # fixed-payout mission ship — fixed stardust or a direct prize
+  # (Mission::Prize). Shop unlocks don't count: they only unlock items the
+  # user still pays for. Such a ship takes the static_prize payout path and
+  # never enters voting — Projects::ShipsController#resolve_payout_path
+  # forces that path while this bypass is active.
+  def fixed_payout_mission_vote_debt_bypass?
+    owner = memberships.owner.first&.user
+    return false if owner.nil? || owner.vote_balance >= 0
+    return false if Flipper.enabled?(:week_2_release, owner)
+
+    mission = current_mission
+    return false if mission.nil? || shipped_to_mission?(mission)
+
+    (mission.fixed_stardust_payout.to_i.positive? && !owner.completed_mission_ids.include?(mission.id)) ||
+      (mission.has_prizes? && !owner.redeemed_prize_for_mission?(mission))
   end
 
   # Whether every project-info requirement (see INFO_REQUIREMENT_KEYS) passes,
