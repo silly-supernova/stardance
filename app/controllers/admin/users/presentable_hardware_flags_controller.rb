@@ -1,5 +1,5 @@
 class Admin::Users::PresentableHardwareFlagsController < Admin::ApplicationController
-  before_action -> { head :not_found unless Project.hardware_flow_enabled?(current_user) }
+  before_action -> { head :not_found unless Flipper.enabled?(:hardware_flow, current_user) }
   before_action :set_user
 
   # Granted after a showcase project (forms.hackclub.com/submit-showcase-project)
