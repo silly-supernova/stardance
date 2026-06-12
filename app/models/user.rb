@@ -178,11 +178,6 @@ class User < ApplicationRecord
   scope :matching_ref, ->(ref) {
     where(arel_table[:ref].lower.eq(ref.to_s.downcase))
   }
-  scope :matching_emails, ->(emails) {
-    normalized_emails = Array(emails).map { |email| email.to_s.downcase }.select(&:present?)
-
-    normalized_emails.empty? ? none : where(arel_table[:email].lower.in(normalized_emails))
-  }
 
   # The landing-page signup counter: distinct emails across non-banned users
   # and RSVPs.
@@ -218,6 +213,7 @@ class User < ApplicationRecord
   include User::Notifications
   include User::Roles
   include User::Identities
+  include User::AmbassadorReferrals
   include User::Verification
   include User::HackatimeSync
   include User::ShopAccess
@@ -287,6 +283,8 @@ class User < ApplicationRecord
       email: email,
       ref: ref,
       user_ref: user_ref,
+      slack_id: slack_id,
+      display_name: display_name,
       verification_status: verification_status,
       hours_logged: hours_logged,
       hours_approved: hours_approved,
