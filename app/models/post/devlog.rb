@@ -64,10 +64,7 @@ class Post::Devlog < ApplicationRecord
   has_many :likes, as: :likeable, dependent: :destroy
   has_many :comments, as: :commentable, dependent: :destroy
 
-  # Lookout screen-recording sessions backing this devlog (hardware projects).
-  # Provenance only — logged time still comes from Hackatime.
-  has_many :devlog_lookout_sessions, foreign_key: :devlog_id, dependent: :destroy
-  has_many :lookout_sessions, through: :devlog_lookout_sessions
+  has_many :lookout_sessions, foreign_key: :devlog_id
 
   # only for images – not for videos or gif!
   has_many_attached :attachments do |attachable|

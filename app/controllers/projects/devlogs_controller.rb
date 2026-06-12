@@ -23,6 +23,7 @@ class Projects::DevlogsController < ApplicationController
       return redirect_to project_path(@project), alert: "Could not calculate your coding time. Please try again." unless @preview_time.present?
 
       @devlog = Post::Devlog.new(devlog_params)
+      @devlog.uploading_attachments = devlog_params[:attachments].present?
       @devlog.duration_seconds = @preview_seconds
       # Remember which hardware stage this time was logged in (nil for software)
       # so the ship payout basis can count build-phase time only.
@@ -179,16 +180,12 @@ class Projects::DevlogsController < ApplicationController
     params.require(:post_devlog).permit(:body, attachments: [])
   end
 
-  # Link any Lookout sessions the composer attached. Scoped to this project +
-  # current_user so a forged id can't attach someone else's session. The unique
-  # index on (devlog_id, lookout_session_id) plus find_or_create_by guards dups.
   def attach_lookout_sessions(devlog)
     ids = Array(params.dig(:post_devlog, :lookout_session_ids)).reject(&:blank?)
     return if ids.empty?
 
-    @project.lookout_sessions.where(user: current_user, id: ids).find_each do |lookout_session|
-      DevlogLookoutSession.find_or_create_by!(devlog: devlog, lookout_session: lookout_session)
-    end
+    @project.lookout_sessions.where(user: current_user, id: ids, devlog_id: nil)
+      .update_all(devlog_id: devlog.id)
   end
 
   def update_devlog_params

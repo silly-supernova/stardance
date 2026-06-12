@@ -38,8 +38,7 @@ class LookoutSession < ApplicationRecord
   belongs_to :user
   belongs_to :project
 
-  has_many :devlog_lookout_sessions, dependent: :destroy
-  has_many :devlogs, through: :devlog_lookout_sessions, source: :devlog
+  belongs_to :devlog, class_name: "Post::Devlog", optional: true
 
   validates :token, presence: true, uniqueness: true
   validates :status, inclusion: { in: STATUSES }
