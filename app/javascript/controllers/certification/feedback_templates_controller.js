@@ -11,7 +11,6 @@ export default class extends Controller {
   static targets = [
     "picker",
     "feedback",
-    "returnedRadio",
     "personalGroup",
     "deleteButton",
   ];
@@ -38,7 +37,6 @@ export default class extends Controller {
 
     this.feedbackTarget.value = body;
     this.lastInsertedBody = body;
-    if (this.hasReturnedRadioTarget) this.returnedRadioTarget.checked = true;
     this.selectFirstBullet(body);
   }
 
