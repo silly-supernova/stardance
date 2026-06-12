@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_10_172657) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_11_210539) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -226,6 +226,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_10_172657) do
     t.index ["commentable_type", "commentable_id"], name: "index_comments_on_commentable"
     t.index ["deleted_at"], name: "index_comments_on_deleted_at"
     t.index ["user_id"], name: "index_comments_on_user_id"
+  end
+
+  create_table "daily_rolls", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.date "rolled_on", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.integer "value", null: false
+    t.index ["rolled_on", "value"], name: "index_daily_rolls_on_rolled_on_and_value"
+    t.index ["user_id", "rolled_on"], name: "index_daily_rolls_on_user_id_and_rolled_on", unique: true
+    t.index ["user_id"], name: "index_daily_rolls_on_user_id"
   end
 
   create_table "devlog_versions", force: :cascade do |t|
@@ -485,6 +496,32 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_10_172657) do
     t.index ["slug"], name: "index_missions_on_slug", unique: true
   end
 
+  create_table "notifications", force: :cascade do |t|
+    t.bigint "actor_id"
+    t.datetime "created_at", null: false
+    t.datetime "email_delivered_at"
+    t.integer "group_count", default: 1, null: false
+    t.string "group_key"
+    t.jsonb "params", default: {}, null: false
+    t.integer "priority", default: 0, null: false
+    t.datetime "read_at"
+    t.bigint "recipient_id", null: false
+    t.bigint "record_id"
+    t.string "record_type"
+    t.datetime "seen_at"
+    t.datetime "slack_enqueued_at"
+    t.string "type", null: false
+    t.datetime "updated_at", null: false
+    t.index ["actor_id"], name: "index_notifications_on_actor_id"
+    t.index ["recipient_id", "created_at"], name: "index_notifications_on_recipient_id_and_created_at"
+    t.index ["recipient_id", "group_key", "read_at"], name: "index_notifications_on_recipient_id_and_group_key_and_read_at", where: "(group_key IS NOT NULL)"
+    t.index ["recipient_id", "seen_at"], name: "index_notifications_on_recipient_id_and_seen_at"
+    t.index ["recipient_id", "type", "group_key"], name: "index_notifications_unique_unread_aggregate", unique: true, where: "((read_at IS NULL) AND (group_key IS NOT NULL))"
+    t.index ["recipient_id"], name: "index_notifications_on_recipient_id"
+    t.index ["record_type", "record_id"], name: "index_notifications_on_record_type_and_record_id"
+    t.index ["type", "created_at"], name: "index_notifications_on_type_and_created_at"
+  end
+
   create_table "post_devlogs", force: :cascade do |t|
     t.string "body"
     t.integer "comments_count", default: 0, null: false
@@ -689,7 +726,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_10_172657) do
     t.string "code", null: false
     t.datetime "created_at", null: false
     t.boolean "eligible", default: true, null: false
-    t.boolean "fraud_cleared", default: false, null: false
     t.string "github_avatar_url"
     t.string "github_login"
     t.string "github_uid"
@@ -1156,6 +1192,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_10_172657) do
     t.index ["user_id"], name: "index_user_identities_on_user_id"
   end
 
+  create_table "user_notification_preferences", force: :cascade do |t|
+    t.string "category", null: false
+    t.datetime "created_at", null: false
+    t.boolean "email_enabled"
+    t.boolean "in_app_enabled"
+    t.boolean "slack_enabled"
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["user_id", "category"], name: "index_user_notification_preferences_on_user_id_and_category", unique: true
+    t.index ["user_id"], name: "index_user_notification_preferences_on_user_id"
+  end
+
   create_table "user_preferences", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.boolean "leaderboard_optin", default: false, null: false
@@ -1308,6 +1356,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_10_172657) do
   add_foreign_key "certification_ysws_reviews", "users", column: "reviewer_id"
   add_foreign_key "certification_ysws_reviews", "users", column: "spotchecked_by_id"
   add_foreign_key "comments", "users"
+  add_foreign_key "daily_rolls", "users"
   add_foreign_key "devlog_versions", "post_devlogs", column: "devlog_id"
   add_foreign_key "devlog_versions", "users"
   add_foreign_key "follows", "users", column: "followed_id"
@@ -1338,6 +1387,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_10_172657) do
   add_foreign_key "mission_submissions", "post_ship_events", column: "ship_event_id"
   add_foreign_key "mission_submissions", "shop_orders"
   add_foreign_key "mission_submissions", "users", column: "reviewed_by_id"
+  add_foreign_key "notifications", "users", column: "actor_id", on_delete: :nullify
+  add_foreign_key "notifications", "users", column: "recipient_id", on_delete: :cascade
   add_foreign_key "post_reposts", "posts", column: "original_post_id"
   add_foreign_key "post_reposts", "users"
   add_foreign_key "posts", "projects"
@@ -1401,6 +1452,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_10_172657) do
   add_foreign_key "user_hackatime_projects", "projects"
   add_foreign_key "user_hackatime_projects", "users"
   add_foreign_key "user_identities", "users"
+  add_foreign_key "user_notification_preferences", "users", on_delete: :cascade
   add_foreign_key "user_preferences", "users"
   add_foreign_key "user_vote_verdicts", "users"
   add_foreign_key "vote_assignments", "post_ship_events", column: "ship_event_id"

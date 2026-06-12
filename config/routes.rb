@@ -532,6 +532,12 @@ Rails.application.routes.draw do
     resources :dismissals, only: [ :create ]
     post "verification/refresh", to: "verifications#refresh", as: :verification_refresh
     post "dev/pretend_idv", to: "dev_tools#pretend_idv", as: :pretend_idv_dev
+    resources :notifications, only: [ :index ] do
+      collection do
+        post :mark_all_seen
+      end
+    end
+    resource :notification_settings, only: [ :show, :update ], controller: "notification_settings"
   end
   get "my/achievements", to: "achievements#index", as: :my_achievements
 

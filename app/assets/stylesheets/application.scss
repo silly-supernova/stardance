@@ -79,4 +79,6 @@
 @use "pages/certification/mystats" as certification_mystats;
 @use "pages/certification/payouts" as certification_payouts;
 @use "pages/raffle";
+@use "pages/notifications" as notifications_page;
+@use "pages/notification_settings" as notification_settings_page;
 @use "landing/landing_footer";

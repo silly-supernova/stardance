@@ -97,6 +97,10 @@ class User < ApplicationRecord
   has_many :following, through: :follows_as_follower, source: :followed
   has_many :followers, through: :follows_as_followed, source: :follower
 
+  has_many :notifications, foreign_key: :recipient_id, dependent: :destroy, inverse_of: :recipient
+  has_many :actor_notifications, class_name: "Notification", foreign_key: :actor_id, dependent: :nullify, inverse_of: :actor
+  has_many :notification_preferences, class_name: "User::NotificationPreference", dependent: :destroy
+
   has_many :mission_memberships, class_name: "Mission::Membership", dependent: :destroy
   has_many :owned_missions,      -> { merge(Mission::Membership.owner_role) },
            through: :mission_memberships, source: :mission

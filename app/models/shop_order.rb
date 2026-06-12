@@ -109,7 +109,6 @@ class ShopOrder < ApplicationRecord
   before_create :freeze_item_price
   before_create :set_region_from_address
   after_commit :notify_user_of_status_change, if: :saved_change_to_aasm_state?
-  # after_save :notify_assigned_user, if: :saved_change_to_assigned_to_user_id?
 
   scope :worth_counting, -> { where.not(aasm_state: %w[rejected refunded]) }
   scope :real, -> { without_item_type("ShopItem::FreeStickers") }
@@ -311,25 +310,14 @@ class ShopOrder < ApplicationRecord
   def get_agh_contents = shop_item.get_agh_contents(self)
 
   def notify_user_of_status_change
-    return unless user.slack_id.present?
-
     # Don't notify the user when an order is placed on hold — they shouldn't know
     return if aasm_state == "on_hold"
 
-    template = case aasm_state
-    when "rejected" then "notifications/shop_orders/rejected"
-    when "awaiting_verification" then "notifications/shop_orders/awaiting_verification"
-    when "awaiting_verification_call" then "notifications/shop_orders/awaiting_verification_call"
-    when "awaiting_periodical_fulfillment" then "notifications/shop_orders/awaiting_fulfillment"
-    when "fulfilled" then "notifications/shop_orders/fulfilled"
-    else "notifications/shop_orders/default"
-    end
-
-    SendSlackDmJob.perform_later(
-      user.slack_id,
-      nil,
-      blocks_path: template,
-      locals: { order: self }
+    Notifications::ShopOrders::StatusChanged.notify(
+      recipient: user,
+      record: self,
+      params: { "state" => aasm_state },
+      priority: Notifications::ShopOrders::StatusChanged.priority_for(aasm_state)
     )
   end
 
@@ -544,21 +532,5 @@ class ShopOrder < ApplicationRecord
     return unless USPS_SUSPENDED_COUNTRIES.include?(address_country.upcase)
 
     place_on_hold! if may_place_on_hold?
-  end
-
-  def notify_assigned_user
-    return unless assigned_to_user_id.present?
-
-    user = assigned_to_user
-    return unless user&.slack_id.present?
-
-    Rails.logger.info "[ShopOrder] Sending assignment notification to #{user.display_name} (#{user.slack_id})"
-
-    SendSlackDmJob.perform_later(
-      user.slack_id,
-      nil,
-      blocks_path: "notifications/shop_orders/assigned",
-      locals: { order: self, admin_url: Rails.application.routes.url_helpers.admin_shop_order_url(self, host: "stardance.hackclub.com", protocol: "https") }
-    )
   end
 end
