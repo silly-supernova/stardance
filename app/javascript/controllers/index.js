@@ -67,11 +67,17 @@ application.register("count-up", CountUpController)
 import CountdownClockController from "./countdown_clock_controller"
 application.register("countdown-clock", CountdownClockController)
 
+import CountdownController from "./countdown_controller"
+application.register("countdown", CountdownController)
+
 import CurveDrawController from "./curve_draw_controller"
 application.register("curve-draw", CurveDrawController)
 
 import CustomsWarningController from "./customs_warning_controller"
 application.register("customs-warning", CustomsWarningController)
+
+import DailyRollController from "./daily_roll_controller"
+application.register("daily-roll", DailyRollController)
 
 import DecisionTreeController from "./decision_tree_controller"
 application.register("decision-tree", DecisionTreeController)
@@ -130,6 +136,12 @@ application.register("horizontal-scroll", HorizontalScrollController)
 import JsonHighlightController from "./json_highlight_controller"
 application.register("json-highlight", JsonHighlightController)
 
+import LookoutCaptureController from "./lookout_capture_controller"
+application.register("lookout-capture", LookoutCaptureController)
+
+import LookoutRecorderController from "./lookout_recorder_controller"
+application.register("lookout-recorder", LookoutRecorderController)
+
 import MarkdownPreviewController from "./markdown_preview_controller"
 application.register("markdown-preview", MarkdownPreviewController)
 
@@ -138,6 +150,9 @@ application.register("mission-guide-language", MissionGuideLanguageController)
 
 import MissionGuideProgressController from "./mission_guide_progress_controller"
 application.register("mission-guide-progress", MissionGuideProgressController)
+
+import MissionGuideVariablesController from "./mission_guide_variables_controller"
+application.register("mission-guide-variables", MissionGuideVariablesController)
 
 import ModalController from "./modal_controller"
 application.register("modal", ModalController)
@@ -178,6 +193,9 @@ application.register("profile-edit", ProfileEditController)
 import ProfileModalController from "./profile_modal_controller"
 application.register("profile-modal", ProfileModalController)
 
+import ProjectBuilderController from "./project_builder_controller"
+application.register("project-builder", ProjectBuilderController)
+
 import ProjectCreationController from "./project_creation_controller"
 application.register("project-creation", ProjectCreationController)
 
@@ -189,6 +207,9 @@ application.register("project-thumbs-loop", ProjectThumbsLoopController)
 
 import ProjectThumbsScrollController from "./project_thumbs_scroll_controller"
 application.register("project-thumbs-scroll", ProjectThumbsScrollController)
+
+import ProjectTypeController from "./project_type_controller"
+application.register("project-type", ProjectTypeController)
 
 import ReadmeImageController from "./readme_image_controller"
 application.register("readme-image", ReadmeImageController)
