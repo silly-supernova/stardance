@@ -8,12 +8,7 @@ const STORAGE_KEY = "certification-feedback-templates";
 // the personal optgroup, where they can be saved and deleted without
 // leaving the form.
 export default class extends Controller {
-  static targets = [
-    "picker",
-    "feedback",
-    "personalGroup",
-    "deleteButton",
-  ];
+  static targets = ["picker", "feedback", "personalGroup", "deleteButton"];
 
   connect() {
     this.renderPersonal();
