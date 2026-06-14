@@ -197,6 +197,48 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
     assert_not @project.hardware?
   end
 
+  test "hardware_stage cannot be changed via crafted request when the hardware flow is disabled" do
+    Flipper.disable(:hardware_flow)
+    sign_in @owner
+    assert_not @project.hardware?
+
+    patch project_path(@project), params: {
+      inline_project_show: "1",
+      project: { title: "Renamed", hardware_stage: "design" }
+    }
+
+    @project.reload
+    # The non-hardware edit still applies, but the project type is untouched.
+    assert_equal "Renamed", @project.title
+    assert_nil @project.hardware_stage
+    assert_not @project.hardware?
+  end
+
+  test "existing hardware_stage is preserved when the hardware flow is disabled" do
+    @project.update!(hardware_stage: "build")
+    Flipper.disable(:hardware_flow)
+    sign_in @owner
+
+    # The always-present empty hidden field would otherwise clear the column.
+    patch project_path(@project), params: {
+      inline_project_show: "1",
+      project: { hardware_stage: "" }
+    }
+
+    assert_equal "build", @project.reload.hardware_stage
+  end
+
+  test "edit form hides the project type toggle when the hardware flow is disabled" do
+    Flipper.disable(:hardware_flow)
+    sign_in @owner
+
+    get project_path(@project, editing: true)
+
+    assert_response :success
+    assert_select "input[name='project_type_selector']", 0
+    assert_select "input[name='project[hardware_stage]']", 0
+  end
+
   test "owner sees the type toggle set to Hardware with the stage revealed on hardware projects" do
     @project.update!(hardware_stage: "build")
     sign_in @owner

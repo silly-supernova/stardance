@@ -134,6 +134,7 @@
                                } %>
 
             <div class="project-show__edit-grid" data-controller="project-type">
+              <% if Flipper.enabled?(:hardware_flow, current_user) %>
               <div class="project-show__field project-show__field--inline">
                 <span>Project type <%= render "projects/help_tooltip", text: "Software projects track coding time with Hackatime. Hardware projects (electronics, 3D printing, robotics, etc.) record a screen/build timelapse instead." %></span>
                 <% if @project.has_any_funding_request? %>
@@ -202,6 +203,7 @@
                   </div>
                 <% end %>
               </div>
+              <% end %>
 
               <div class="project-show__field project-show__field--inline project-show__field--hackatime">
                 <span>Hackatime projects</span>
