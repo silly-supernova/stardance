@@ -783,6 +783,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_15_133745) do
     t.string "code", null: false
     t.datetime "created_at", null: false
     t.boolean "eligible", default: true, null: false
+    t.boolean "fraud_cleared", default: false, null: false
     t.string "github_avatar_url"
     t.string "github_login"
     t.string "github_uid"
@@ -1528,7 +1529,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_15_133745) do
   add_foreign_key "shop_item_sources", "shop_items"
   add_foreign_key "shop_item_sources", "shop_sources"
   add_foreign_key "shop_items", "users"
-  add_foreign_key "shop_items", "users", column: "created_by_user_id", on_delete: :nullify
+  add_foreign_key "shop_items", "users", column: "created_by_user_id", on_delete: :nullify, validate: false
   add_foreign_key "shop_items", "users", column: "default_assigned_user_id", on_delete: :nullify
   add_foreign_key "shop_order_modifier_selections", "shop_item_modifiers"
   add_foreign_key "shop_order_modifier_selections", "shop_orders"

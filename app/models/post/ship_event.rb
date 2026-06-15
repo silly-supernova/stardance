@@ -8,6 +8,7 @@
 #  feedback_reason            :text
 #  feedback_video_url         :string
 #  hours_at_payout            :float
+#  hours_at_ship              :float
 #  multiplier                 :float
 #  originality_median         :decimal(5, 2)
 #  originality_percentile     :decimal(5, 2)
