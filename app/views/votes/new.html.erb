@@ -1,5 +1,9 @@
 <% content_for :title, "Rate this project" %>
 
+<% if current_user && !current_user.shipped_projects.exists? && !current_user.admin? %>
+  <div class="vote-readonly-bar">You're browsing in read-only mode — any action on this page will likely result in 403!</div>
+<% end %>
+
 <% if @vote_policy.open? && @assignment.present? %>
   <main class="vote-page" aria-labelledby="vote-page-title"
         data-controller="vote-telemetry"

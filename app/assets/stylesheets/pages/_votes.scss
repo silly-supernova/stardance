@@ -1,3 +1,14 @@
+.vote-readonly-bar {
+  width: min(100%, 1400px);
+  margin: var(--space-m) auto 0;
+  padding: var(--space-xs) var(--space-m);
+  border-radius: var(--profile-radius);
+  background: var(--color-brand-highlight-faint);
+  border: 1px solid var(--color-brand-highlight-soft);
+  color: var(--color-brand-highlight);
+  font-size: var(--font-size-s);
+}
+
 .vote-page {
   --vote-page-gap: var(--space-m);
 
