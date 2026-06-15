@@ -453,12 +453,7 @@ class ProjectsController < ApplicationController
   end
 
   def project_params
-    permitted = [ :title, :description, :demo_url, :repo_url, :readme_url, :banner, :ai_declaration, :update_description ]
-    # Project type (hardware_stage) is only editable when the hardware flow is
-    # enabled for the user. Otherwise it's dropped from permitted params so the
-    # existing value is preserved even against hand-crafted requests.
-    permitted << :hardware_stage if Flipper.enabled?(:hardware_flow, current_user)
-    params.require(:project).permit(*permitted, hackatime_project_ids: [])
+    params.require(:project).permit(:title, :description, :demo_url, :repo_url, :readme_url, :banner, :ai_declaration, :update_description, :hardware_stage, hackatime_project_ids: [])
   end
 
   def hackatime_project_ids
