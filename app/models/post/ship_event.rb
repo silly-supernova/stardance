@@ -77,6 +77,7 @@ class Post::ShipEvent < ApplicationRecord
   scope :paid_out, -> { where(certification_status: "approved").where.not(payout: nil) }
 
   after_commit :decrement_user_vote_balance, on: :create
+  after_commit :schedule_type_check, on: :create
 
   validates :body, presence: { message: "Update message can't be blank" }
   validates :body, length: { maximum: BODY_MAX_LENGTH }, on: :create
@@ -131,6 +132,11 @@ class Post::ShipEvent < ApplicationRecord
     return if mission_submission&.payout_path == "static_prize"
 
     post.user.increment!(:vote_balance, -VOTE_COST_PER_SHIP)
+  end
+
+  def schedule_type_check
+    project = post&.project
+    Project::TypeCheckJob.perform_later(project) if project && project.project_type.nil?
   end
 
   # Drives the Mission::Submission state machine off ship cert transitions.
