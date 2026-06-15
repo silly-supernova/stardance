@@ -2,54 +2,56 @@
 #
 # Table name: users
 #
-#  id                           :bigint           not null, primary key
-#  age_attestation              :string
-#  approx_balance               :integer          default(0), not null
-#  approx_total_earned          :integer          default(0), not null
-#  banned                       :boolean          default(FALSE), not null
-#  banned_at                    :datetime
-#  banned_reason                :text
-#  bio                          :text
-#  display_name                 :string
-#  email                        :string
-#  enriched_ref                 :string
-#  experience_level             :string
-#  first_name                   :string
-#  geocoded_country             :string
-#  geocoded_lat                 :float
-#  geocoded_lon                 :float
-#  geocoded_subdivision         :string
-#  granted_roles                :string           default([]), not null, is an Array
-#  guest_email                  :string
-#  has_gotten_free_stickers     :boolean          default(FALSE)
-#  has_pending_achievements     :boolean          default(FALSE), not null
-#  hcb_email                    :string
-#  interests                    :string           default([]), is an Array
-#  internal_notes               :text
-#  ip_address                   :string
-#  last_name                    :string
-#  manual_ysws_override         :boolean
-#  mission_review_notifications :boolean          default(TRUE), not null
-#  onboarded_at                 :datetime
-#  outpost_email_sent_at        :datetime
-#  ref                          :string
-#  regions                      :string           default([]), is an Array
-#  session_token                :string
-#  shop_region                  :enum
-#  shop_tutorial_completed_at   :datetime
-#  shop_tutorial_started_at     :datetime
-#  synced_at                    :datetime
-#  things_dismissed             :string           default([]), not null, is an Array
-#  user_agent                   :string
-#  user_ref                     :string
-#  verification_checked_at      :datetime
-#  verification_status          :string           default("needs_submission"), not null
-#  vote_balance                 :integer          default(0), not null
-#  votes_count                  :integer
-#  ysws_eligible                :boolean          default(FALSE), not null
-#  created_at                   :datetime         not null
-#  updated_at                   :datetime         not null
-#  slack_id                     :string
+#  id                             :bigint           not null, primary key
+#  age_attestation                :string
+#  approx_balance                 :integer          default(0), not null
+#  approx_total_earned            :integer          default(0), not null
+#  banned                         :boolean          default(FALSE), not null
+#  banned_at                      :datetime
+#  banned_reason                  :text
+#  bio                            :text
+#  display_name                   :string
+#  email                          :string
+#  enriched_ref                   :string
+#  experience_level               :string
+#  first_name                     :string
+#  geocoded_country               :string
+#  geocoded_lat                   :float
+#  geocoded_lon                   :float
+#  geocoded_subdivision           :string
+#  granted_roles                  :string           default([]), not null, is an Array
+#  guest_email                    :string
+#  has_gotten_free_stickers       :boolean          default(FALSE)
+#  has_pending_achievements       :boolean          default(FALSE), not null
+#  hcb_email                      :string
+#  interests                      :string           default([]), is an Array
+#  internal_notes                 :text
+#  ip_address                     :string
+#  last_name                      :string
+#  manual_outpost_ticket_approval :string
+#  manual_ysws_override           :boolean
+#  mission_review_notifications   :boolean          default(TRUE), not null
+#  onboarded_at                   :datetime
+#  outpost_discount_stardust      :integer          default(0), not null
+#  outpost_email_sent_at          :datetime
+#  ref                            :string
+#  regions                        :string           default([]), is an Array
+#  session_token                  :string
+#  shop_region                    :enum
+#  shop_tutorial_completed_at     :datetime
+#  shop_tutorial_started_at       :datetime
+#  synced_at                      :datetime
+#  things_dismissed               :string           default([]), not null, is an Array
+#  user_agent                     :string
+#  user_ref                       :string
+#  verification_checked_at        :datetime
+#  verification_status            :string           default("needs_submission"), not null
+#  vote_balance                   :integer          default(0), not null
+#  votes_count                    :integer
+#  ysws_eligible                  :boolean          default(FALSE), not null
+#  created_at                     :datetime         not null
+#  updated_at                     :datetime         not null
+#  slack_id                       :string
 #
 # Indexes
 #
@@ -88,6 +90,7 @@ class User < ApplicationRecord
   has_many :project_skips, class_name: "Project::Skip", dependent: :destroy
   has_many :likes, dependent: :destroy
   has_many :comments, dependent: :destroy
+  has_many :post_views, dependent: :delete_all
   has_many :ledger_entries, dependent: :destroy
   has_many :project_follows, dependent: :destroy
   has_many :followed_projects, through: :project_follows, source: :project
@@ -97,6 +100,10 @@ class User < ApplicationRecord
   has_many :follows_as_followed, class_name: "Follow", foreign_key: :followed_id, dependent: :destroy, inverse_of: :followed
   has_many :following, through: :follows_as_follower, source: :followed
   has_many :followers, through: :follows_as_followed, source: :follower
+
+  has_many :notifications, foreign_key: :recipient_id, dependent: :destroy, inverse_of: :recipient
+  has_many :actor_notifications, class_name: "Notification", foreign_key: :actor_id, dependent: :nullify, inverse_of: :actor
+  has_many :notification_preferences, class_name: "User::NotificationPreference", dependent: :destroy
 
   has_many :mission_memberships, class_name: "Mission::Membership", dependent: :destroy
   has_many :owned_missions,      -> { merge(Mission::Membership.owner_role) },
@@ -177,11 +184,16 @@ class User < ApplicationRecord
   scope :matching_ref, ->(ref) {
     where(arel_table[:ref].lower.eq(ref.to_s.downcase))
   }
-  scope :matching_emails, ->(emails) {
-    normalized_emails = Array(emails).map { |email| email.to_s.downcase }.select(&:present?)
 
-    normalized_emails.empty? ? none : where(arel_table[:email].lower.in(normalized_emails))
-  }
+  # The landing-page signup counter: distinct emails across non-banned users
+  # and RSVPs.
+  def self.deduplicated_signup_count
+    user_emails = where.not(email: [ nil, "" ]).where(banned: false).select("LOWER(email) AS email")
+    rsvp_emails = Rsvp.select("LOWER(email) AS email")
+    connection.select_value(
+      "SELECT COUNT(*) FROM (#{user_emails.to_sql} UNION #{rsvp_emails.to_sql}) AS combined"
+    )
+  end
 
   validates :banner, content_type: [ "image/png", "image/jpeg", "image/webp", "image/gif" ],
                      size: { less_than: 8.megabytes }
@@ -203,10 +215,12 @@ class User < ApplicationRecord
   validates :display_name, format: { with: USERNAME_FORMAT, message: "can only contain letters, numbers, hyphens, and underscores" }, if: :display_name_changed?
   validates :hcb_email, format: { with: URI::MailTo::EMAIL_REGEXP }, allow_blank: true
   validates :user_ref, length: { maximum: 100 }, allow_blank: true
+  validates :manual_outpost_ticket_approval, format: { with: /\Ahttps?:\/\/.+\z/i, message: "must be an HTTP(S) URL" }, allow_blank: true
 
   include User::Notifications
   include User::Roles
   include User::Identities
+  include User::AmbassadorReferrals
   include User::Verification
   include User::HackatimeSync
   include User::ShopAccess
@@ -276,6 +290,8 @@ class User < ApplicationRecord
       email: email,
       ref: ref,
       user_ref: user_ref,
+      slack_id: slack_id,
+      display_name: display_name,
       verification_status: verification_status,
       hours_logged: hours_logged,
       hours_approved: hours_approved,

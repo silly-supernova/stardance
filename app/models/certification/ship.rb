@@ -200,8 +200,12 @@ module Certification
     before_save :stamp_decided_at, if: -> { will_save_change_to_status? && status_change&.last != "pending" && decided_at.nil? }
     before_save :assign_stardust_earned, if: -> { will_save_change_to_status? && status_change&.last != "pending" && reviewer_id.present? }
     after_save :apply_verdict_to_project!, if: :saved_change_to_status?
-    after_save_commit :post_decision_to_timeline!, if: -> { saved_change_to_status? && !pending? }
     after_save_commit :notify_owner!, if: -> { saved_change_to_status? && !pending? }
+
+    # Timeline cards for decided reviews sort by when the verdict landed.
+    def decided_on
+      decided_at || updated_at
+    end
 
     private
 
@@ -256,20 +260,6 @@ module Certification
         project: project,
         ship_cert_id: id
       ).call
-    end
-
-    def post_decision_to_timeline!
-      return unless owner
-      return unless Flipper.enabled?(:week_1_release, owner)
-
-      Post.create_or_find_by!(postable_type: Post::PRIVATE_SHIP_DECISION_TYPE, postable_id: id) do |post|
-        post.user = owner
-        post.project = project
-        # Keep the card where the first verdict landed; later flips update content,
-        # not timeline order.
-        post.created_at = decided_at if decided_at.present?
-        post.updated_at = decided_at if decided_at.present?
-      end
     end
 
     def notify_owner!

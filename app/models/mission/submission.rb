@@ -108,7 +108,6 @@ class Mission::Submission < ApplicationRecord
     global_ids = User.where("? = ANY (granted_roles)", "mission_reviewer").pluck(:id)
 
     User.where(id: (per_mission_ids + global_ids).uniq - teammate_ids)
-        .where(mission_review_notifications: true)
         .where.not(slack_id: [ nil, "" ])
   end
 
@@ -134,12 +133,9 @@ class Mission::Submission < ApplicationRecord
   private
 
   def notify_reviewers
+    builder = ship_event&.post&.user
     reviewer_recipients.find_each do |reviewer|
-      SendSlackDmJob.perform_later(
-        reviewer.slack_id,
-        blocks_path: "notifications/missions/submission_pending_for_reviewer.slack_message",
-        locals: notification_locals
-      )
+      Notifications::Missions::SubmissionPendingForReviewer.notify(recipient: reviewer, actor: builder, record: self)
     end
   rescue StandardError => e
     Rails.logger.warn("Mission::Submission notify_reviewers (#{id}): #{e.message}")
