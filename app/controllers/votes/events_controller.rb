@@ -2,7 +2,6 @@ class Votes::EventsController < ApplicationController
   include VoteTrackable
 
   skip_before_action :remember_page
-  skip_before_action :verify_authenticity_token, only: :create
 
   NUMERIC_PROPERTY_KEYS = %i[
     visible_ms focused_ms hidden_count blur_count max_idle_gap_ms elapsed_ms

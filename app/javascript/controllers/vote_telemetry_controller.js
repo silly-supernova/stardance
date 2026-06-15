@@ -263,6 +263,16 @@ export default class extends Controller {
     });
   }
 
+  get csrfToken() {
+    return document.querySelector("meta[name='csrf-token']")?.content;
+  }
+
+  get endpointWithToken() {
+    const token = this.csrfToken;
+    if (!token) return this.endpointValue;
+    return `${this.endpointValue}?authenticity_token=${encodeURIComponent(token)}`;
+  }
+
   flush() {
     this.recordTick();
     this.queueFeedbackChange();
@@ -275,7 +285,7 @@ export default class extends Controller {
 
     if (navigator.sendBeacon) {
       navigator.sendBeacon(
-        this.endpointValue,
+        this.endpointWithToken,
         new Blob([body], { type: "application/json" }),
       );
     } else {
@@ -283,8 +293,7 @@ export default class extends Controller {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-CSRF-Token": document.querySelector("meta[name='csrf-token']")
-            ?.content,
+          "X-CSRF-Token": this.csrfToken,
         },
         body,
         keepalive: true,
