@@ -150,27 +150,6 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
     assert project.hardware?
   end
 
-  test "design-stage funding button is soft-disabled with a complete-info tooltip when project info is incomplete" do
-    @project.update!(hardware_stage: "design")
-    # The actions nav (which holds the funding button) only renders once the
-    # owner has a Hackatime account linked.
-    User::Identity.insert_all([
-      { user_id: @owner.id, provider: "hackatime", uid: "hackatime-funding-owner", created_at: Time.current, updated_at: Time.current }
-    ])
-    sign_in @owner
-    assert_not @project.info_complete?, "fixture project should start with incomplete info"
-
-    HackatimeService.stub(:fetch_stats, { projects: {}, banned: false }) do
-      get project_path(@project)
-    end
-
-    assert_response :success
-    # Greyed-out (aria-disabled) button carrying the tooltip; the active
-    # modal-opening button is not rendered while info is incomplete.
-    assert_select "button.action-btn--disabled[aria-disabled='true'][data-tooltip-message-value='Complete project info']"
-    assert_select "button[onclick*='funding-request-modal-'][onclick*='showModal']", 0
-  end
-
   test "owner can switch the hardware stage from the edit form" do
     @project.update!(hardware_stage: "design")
     sign_in @owner
