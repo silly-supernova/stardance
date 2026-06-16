@@ -333,9 +333,9 @@ module Certification
         ====================================================
         The Stardance project can be found at https://stardance.hackclub.com/projects/#{project_id}
 
-        The Full YSWS Review + devlogs are at https://stardance.hackclub.com/admin/certification/ysws/#{ysws_review_id}
+        The Full YSWS Review + devlogs are at https://stardance.hackclub.com/admin/certification/review/#{ysws_review_id}
 
-        The Ship Cert is at https://stardance.hackclub.com/admin/certification/ship_cert/#{ship_cert_id}/
+        The Ship Cert is at https://stardance.hackclub.com/admin/certification/ship/#{ship_cert_id}/
       JUSTIFICATION
 
       # Add shop orders section if available
