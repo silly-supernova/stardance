@@ -33,6 +33,10 @@ class Shop::BaseController < ApplicationController
     preload_shop_item_images(@shop_items + Array(@recently_added_items))
   end
 
+  def prepare_visible_shop_items(items = @shop_items)
+    @visible_shop_items = Array(items).select { |item| item.image.attached? && item.enabled_in_region?(@user_region) }
+  end
+
   def preload_shop_item_images(items)
     items = items.compact.uniq
     return if items.empty?
