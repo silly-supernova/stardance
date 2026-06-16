@@ -134,7 +134,7 @@ module Certification
       pending_ages = where(status: :pending).pluck(:created_at)
       median_pending_wait = if pending_ages.any?
         sorted = pending_ages.map { |t| now - t }.sort
-        (sorted[sorted.size / 2] / 3600.0).round(1)
+        (median_value(sorted) / 3600.0).round(1)
       end
 
       avg_decision_secs = decided.where.not(decided_at: nil)
@@ -238,7 +238,7 @@ module Certification
         .group_by { |_, da| da.to_date }
         .transform_values do |pairs|
           hours = pairs.map { |ca, da| (da - ca) / 3600.0 }.sort
-          hours[hours.size / 2].round(1)
+          median_value(hours).round(1)
         end
 
       (0...days).map do |i|
@@ -325,7 +325,12 @@ module Certification
         .count
     end
 
-    # Stardust earned per completed review
+    def self.median_value(sorted)
+      n = sorted.size
+      n.odd? ? sorted[n / 2] : (sorted[n / 2 - 1] + sorted[n / 2]) / 2.0
+    end
+    private_class_method :median_value
+
     REVIEW_BOUNTY = 1 # This will be updated once we add the project types.
 
     before_save :stamp_claimed_at, if: -> { will_save_change_to_reviewer_id? && reviewer_id.present? && claimed_at.nil? }

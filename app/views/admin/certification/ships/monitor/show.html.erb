@@ -191,7 +191,7 @@
 
       <section class="ship-monitor__section" id="section-reviewers">
         <h2 class="ship-monitor__section-title">Reviewer comparison · last 30 days</h2>
-        <% if @reviewer_chart_data == "[]" %>
+        <% if !@has_reviewer_chart_data %>
           <div class="ship-monitor__empty">No reviewer activity in the last 30 days.</div>
         <% else %>
           <div class="ship-monitor__reviewer-picker" data-certification--ships--monitor-chart-target="reviewerPicker"></div>

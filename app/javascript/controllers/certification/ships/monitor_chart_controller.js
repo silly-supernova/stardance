@@ -527,14 +527,32 @@ export default class extends Controller {
 
       const row = document.createElement("div");
       row.className = "ship-monitor__reviewer-total";
-      row.innerHTML = `
-        <span class="ship-monitor__reviewer-total-name" style="color:${color}">${r.name}</span>
-        <span class="ship-monitor__reviewer-total-stat">${approved.toLocaleString()} approved</span>
-        <span class="ship-monitor__reviewer-total-sep">·</span>
-        <span class="ship-monitor__reviewer-total-stat">${returned.toLocaleString()} returned</span>
-        <span class="ship-monitor__reviewer-total-sep">·</span>
-        <span class="ship-monitor__reviewer-total-rate">${rate}% rejection</span>
-      `;
+
+      const mkSpan = (cls, text) => {
+        const s = document.createElement("span");
+        s.className = cls;
+        s.textContent = text;
+        return s;
+      };
+
+      const name = mkSpan("ship-monitor__reviewer-total-name", r.name);
+      name.style.color = color;
+      const sep = () => mkSpan("ship-monitor__reviewer-total-sep", "·");
+
+      row.append(
+        name,
+        mkSpan(
+          "ship-monitor__reviewer-total-stat",
+          `${approved.toLocaleString()} approved`,
+        ),
+        sep(),
+        mkSpan(
+          "ship-monitor__reviewer-total-stat",
+          `${returned.toLocaleString()} returned`,
+        ),
+        sep(),
+        mkSpan("ship-monitor__reviewer-total-rate", `${rate}% rejection`),
+      );
       el.appendChild(row);
     });
   }
