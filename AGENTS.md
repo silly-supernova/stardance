@@ -5,6 +5,48 @@
 Check with the user if the local setup uses docker. If so run anything using `docker compose run --service-ports web COMMAND`.
 You can't run in an interactive docker shell but you can execute one-off commands.
 
+## Local setup on Apple Silicon / prod mirror
+
+Things the docs/README don't tell you that you have to discover to actually boot
+it. Keep the host-specific fixes in an **untracked `docker-compose.override.yml`**
+so the committed config and `Gemfile.lock` stay clean.
+
+- **`.env` is required and not checked in.** A fresh checkout/worktree has no
+  `.env` — `cp example.env .env` (its dev keys work; `dotenv-rails` loads it from
+  the mounted volume). **Worktrees should pull from the parent repo's `.env`**:
+  `PROD_DATABASE_URL` (and other real secrets) live in the parent repo's `.env`,
+  not in the worktree's copy, so source/copy those over rather than assuming the
+  worktree is self-contained.
+- **arm64 build break.** The web image won't build natively — `bundle install`
+  exits 7 because `Gemfile.lock` has no `aarch64-linux` platform and `sqlite-vec`
+  ships no arm64-linux build. Fix without touching the lockfile: build web as
+  `platform: linux/amd64` (runs under Rosetta — slower, but `x86_64-linux` is
+  fully in the lockfile).
+- **Postgres version mismatch.** Prod is Postgres 18.x but `docker-compose.yml`
+  pins `pgvector/pgvector:pg16`. `pg_dump` can't read a newer server and a
+  downgrade restore is risky, so to load a prod mirror bump the local db to
+  `pgvector/pgvector:pg18`. The pg18 image refuses data mounted directly at
+  `/var/lib/postgresql/data`, so also set `PGDATA=/var/lib/postgresql/data/pgdata`.
+- **You don't need a full dump or prod encryption keys for a usable mirror.**
+  ~95% of prod is analytics noise (`active_insights_requests`/`jobs`, `versions`,
+  `vote_events`, `post_views`). `pg_dump --exclude-table-data` on those yields
+  ~250 MB with users/posts/devlogs/projects intact. `users.email`/`display_name`
+  are plaintext (Lockbox only covers identities/credentials/shop tables, which
+  timeline/post rendering never touches), so it renders fine with the
+  `example.env` dev keys.
+- **Dev login (dev/test only):** `GET /dev_login/:id` signs you in as that user;
+  `DEV_ADMIN_USER_ID` is the no-id default.
+- **Reaching it over Tailscale:** Rails dev host-authorization returns `403
+  "Blocked hosts"` for unknown hosts. The match includes the port and the
+  leading-dot shorthand (`.ts.net`) doesn't match. Rails 8.1 reads a native
+  `RAILS_DEVELOPMENT_HOSTS` env var — set your tailnet host there in `.env`
+  rather than editing `development.rb`. Docker already publishes 3000 on
+  `0.0.0.0`, so the tailnet can reach it.
+- **First-boot gotchas:** `docker compose up -d web` may try to rebuild, and a
+  tail-piped command's exit code can mask a build failure — check that the image
+  actually exists, not just the pipe's `exit 0`. First boot compiles assets, so
+  HTTP 200 lags container start by ~10–20s.
+
 ## Build & Test Commands
 
 - **Run all tests**: `bin/rails test`
