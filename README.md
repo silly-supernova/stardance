@@ -55,22 +55,33 @@ git reset --hard
 
 ## i hate docker
 
-weirdo, but okay, you gotta figure out how to get postgres running yourself bucko
+weirdo, but okay. you still need postgres _somewhere_ — easiest is to run just
+that one piece in docker (`docker compose up -d db`) and run rails on your host.
 
-1. double check your `.env` file to make sure its pointed at your database
-2. setup the db
-
-   ```bash
-   bin/rails db:prepare
-   ```
-
-3. start the dev server
+1. one-shot setup: copies `.env`, installs ruby + js deps, preps the db, then
+   boots the server.
 
    ```bash
-   bin/dev
+   bin/setup
    ```
 
-4. have a fire extinguisher at the ready
+2. a few gotchas if you wire things up by hand instead of `bin/setup`:
+
+   - **js deps need yarn 4 via corepack.** `package.json` pins `yarn@4`, so a
+     plain global `yarn` (usually v1) refuses to install. run `corepack enable`
+     once, then `yarn install` (or `corepack yarn install`).
+   - **`DATABASE_URL` in `.env` points at the `db` hostname**, which only
+     resolves inside docker's network. running rails on your host? point it at
+     `localhost` (the `db` container publishes 5432 there):
+
+     ```bash
+     DATABASE_URL=postgresql://postgres:pass@localhost:5432/stardance_development bin/setup
+     ```
+
+   - **port 3000 already taken?** `Procfile.dev` honors `$PORT`, so just
+     `PORT=3001 bin/dev`.
+
+3. have a fire extinguisher at the ready
 
 ## production deployment
 
