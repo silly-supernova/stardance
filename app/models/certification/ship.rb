@@ -101,6 +101,16 @@ module Certification
       joins(:project)
         .where(projects: { deleted_at: nil })
         .where.not(project_id: user.memberships.select(:project_id))
+        .software_only
+    }
+
+    # Hardware is reviewed through the funding queue, not the ship review queue,
+    # so design-stage projects and anything the AI typed as "Hardware" are hidden
+    # here. Assumes the caller has already joined :project. IS DISTINCT FROM keeps
+    # plain software projects (NULL hardware_stage / project_type) in the queue.
+    scope :software_only, -> {
+      where("projects.hardware_stage IS DISTINCT FROM 'design'")
+        .where("projects.project_type IS DISTINCT FROM 'Hardware'")
     }
 
     scope :by_project_type, ->(type) {
@@ -125,26 +135,29 @@ module Certification
     def self.dashboard_stats(now: Time.current)
       today = now.beginning_of_day
       week = now.beginning_of_week
-      approved_count = where(status: :approved).count
-      returned_count = where(status: :returned).count
+      # Hardware is reviewed in the funding queue, so the ship queue's health
+      # numbers only count software reviews (see :software_only).
+      base = joins(:project).software_only
+      approved_count = base.where(status: :approved).count
+      returned_count = base.where(status: :returned).count
       decided_count = approved_count + returned_count
 
-      decided = where.not(status: :pending)
+      decided = base.where.not(status: :pending)
 
       {
-        pending: where(status: :pending).count,
+        pending: base.where(status: :pending).count,
         approved: approved_count,
         returned: returned_count,
         decided: decided_count,
         approval_rate: decided_count.zero? ? nil : (approved_count * 100.0 / decided_count).round,
         decisions_today: decided.where(decided_at: today..).count,
-        new_today: where(created_at: today..).count,
+        new_today: base.where(created_at: today..).count,
         decisions_this_week: decided.where(decided_at: week..).count,
-        new_this_week: where(created_at: week..).count,
-        oldest_pending: where(status: :pending).order(created_at: :asc).first,
+        new_this_week: base.where(created_at: week..).count,
+        oldest_pending: base.where(status: :pending).order(created_at: :asc).first,
         queue_target: QUEUE_TARGET,
         sla_days: SLA_DAYS,
-        overdue_pending: where(status: :pending).where("created_at < ?", now - SLA_DAYS.days).count
+        overdue_pending: base.where(status: :pending).where("created_at < ?", now - SLA_DAYS.days).count
       }
     end
 

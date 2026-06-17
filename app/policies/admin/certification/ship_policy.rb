@@ -17,7 +17,8 @@ class Admin::Certification::ShipPolicy < ApplicationPolicy
   class Scope < ApplicationPolicy::Scope
     def resolve
       return scope.none unless user&.can_review?
-      scope.joins(:project).where(projects: { deleted_at: nil })
+      # Hardware is reviewed in the funding queue, so it never appears here.
+      scope.joins(:project).where(projects: { deleted_at: nil }).software_only
     end
   end
 

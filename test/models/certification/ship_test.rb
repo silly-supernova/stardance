@@ -86,4 +86,35 @@ class Certification::ShipTest < ActiveSupport::TestCase
     assert_equal reviews.last.id, history[:recent].first.id
     assert history[:recent].first.project_with_deleted.deleted?
   end
+
+  test "for_reviewer hides design-stage and AI-typed hardware, keeps software" do
+    software_review = @project.ship_reviews.create!(status: :pending)
+
+    design = Project.create!(title: "Design HW", description: "hardware in design",
+                             ship_status: "submitted", hardware_stage: "design")
+    design.memberships.create!(user: @owner, role: :owner)
+    design_review = design.ship_reviews.create!(status: :pending)
+
+    ai_hardware = Project.create!(title: "AI HW", description: "AI-typed hardware",
+                                  ship_status: "submitted", project_type: "Hardware")
+    ai_hardware.memberships.create!(user: @owner, role: :owner)
+    ai_review = ai_hardware.ship_reviews.create!(status: :pending)
+
+    visible = Certification::Ship.for_reviewer(@reviewer).pluck(:id)
+
+    assert_includes visible, software_review.id
+    refute_includes visible, design_review.id
+    refute_includes visible, ai_review.id
+  end
+
+  test "dashboard_stats pending count ignores hardware reviews" do
+    before = Certification::Ship.dashboard_stats[:pending]
+
+    design = Project.create!(title: "Design HW", description: "hardware in design",
+                             ship_status: "submitted", hardware_stage: "design")
+    design.memberships.create!(user: @owner, role: :owner)
+    design.ship_reviews.create!(status: :pending)
+
+    assert_equal before, Certification::Ship.dashboard_stats[:pending]
+  end
 end
