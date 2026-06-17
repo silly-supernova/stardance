@@ -43,7 +43,9 @@
                   rows: 4,
                   maxlength: Post::Devlog::BODY_MAX_LENGTH,
                   placeholder: "What are you working on?",
-                  data: { markdown_preview_target: "input" } %>
+                  data: { markdown_preview_target: "input",
+                          controller: "mention-autocomplete",
+                          action: "keydown->mention-autocomplete#onKeydown input->mention-autocomplete#onInput blur->mention-autocomplete#onBlur" } %>
           </div>
           <div class="md-preview markdown-content devlog-edit__preview" data-markdown-preview-target="output" hidden></div>
         </div>

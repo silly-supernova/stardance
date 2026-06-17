@@ -753,6 +753,7 @@ Rails.application.routes.draw do
       resources :ships, path: "ship", only: [ :index, :show, :update ] do
         collection do
           get :next
+          get :logs
         end
         scope module: :ships do
           resource :claim, only: [ :create, :destroy ]

@@ -233,7 +233,7 @@
         <% @projects.each do |project| %>
           <li class="project-list__item">
             <%= link_to project_path(project), class: "profile-project-card" do %>
-              <div class="profile-project-card__banner">
+              <div class="profile-project-card__banner <%= 'ai-detected' if current_user&.admin? && project.banner.attached? && project.banner.blob.metadata["ai_generated"] %>">
                 <% if project.banner.attached? %>
                   <%= image_tag project.banner, alt: "", class: "profile-project-card__banner-img" %>
                 <% else %>
