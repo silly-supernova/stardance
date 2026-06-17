@@ -15,6 +15,8 @@ class AiImageDetectionBackfillJob < ApplicationJob
       next if blob.metadata.key?("ai_generated")
 
       result = AiImageDetector.ai_generated?(blob)
+      next if result.nil?
+
       blob.update!(metadata: blob.metadata.merge("ai_generated" => result))
     end
 
