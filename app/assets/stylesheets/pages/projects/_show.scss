@@ -901,6 +901,12 @@ turbo-frame#project_hero {
   text-underline-offset: 2px;
 }
 
+// Keeps the getting-started CTA pill-sized and centered instead of
+// stretching to the full width of the onboarding column.
+.project-show__onboarding-cta {
+  align-self: center;
+}
+
 .project-show__onboarding-list {
   display: flex;
   flex-direction: column;
