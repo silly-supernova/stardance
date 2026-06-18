@@ -154,4 +154,3 @@ gem "neighbor"
 
 gem "email_reply_parser"
 gem "appsignal"
-gem "mjml-rails"

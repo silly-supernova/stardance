@@ -35,10 +35,6 @@ class AdminPolicy < ApplicationPolicy
     user.admin? || user.has_role?(:raffle_admin)
   end
 
-  def access_email_templates?
-    user.admin?
-  end
-
   def manage_shop?
     user.admin? || user.shop_manager?
   end
