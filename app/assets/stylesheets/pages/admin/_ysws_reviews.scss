@@ -668,7 +668,11 @@ body:has(.certification-ysws) {
       }
 
       &--nominated {
-        background: color-mix(in srgb, var(--color-brand-yellow) 16%, transparent);
+        background: color-mix(
+          in srgb,
+          var(--color-brand-yellow) 16%,
+          transparent
+        );
         color: var(--color-brand-yellow);
       }
     }
