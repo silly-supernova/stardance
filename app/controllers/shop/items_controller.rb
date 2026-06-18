@@ -108,9 +108,8 @@ class Shop::ItemsController < Shop::BaseController
 
     pool = @shop_items.select { |item| item.image.attached? && item.enabled_in_region?(@user_region) }
 
-    shuffled = pool.shuffle
-    @new_items     = shuffled.first(8)
-    @popular_items = shuffled.drop(8).first(8)
+    @new_items     = pool.sort_by(&:created_at).reverse.first(8)
+    @popular_items = pool.shuffle.first(8)
   end
 
   def load_orders_sidebar
