@@ -14,6 +14,8 @@ class Admin::Certification::ShipPolicy < ApplicationPolicy
 
   def next? = user&.can_review?
 
+  def set_project_type? = show?
+
   class Scope < ApplicationPolicy::Scope
     def resolve
       return scope.none unless user&.can_review?

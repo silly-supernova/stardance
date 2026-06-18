@@ -1,6 +1,6 @@
 class Admin::Certification::ShipsController < Admin::Certification::ApplicationController
   before_action :release_other_claims, only: [ :next ]
-  before_action :set_ship, only: [ :show, :update ]
+  before_action :set_ship, only: [ :show, :update, :set_project_type ]
   before_action :set_submitter_context, only: [ :show, :update ]
   before_action :set_body_class, only: [ :index, :show, :update, :logs ]
 
@@ -66,6 +66,13 @@ class Admin::Certification::ShipsController < Admin::Certification::ApplicationC
   def show
     authorize @ship
     @reviewed_today = ::Certification::Ship.reviewed_today(current_user)
+  end
+
+  def set_project_type
+    authorize @ship
+    type = params[:project_type].presence_in(Project::USER_SELECTABLE_TYPES)
+    @ship.project.update!(project_type: type) if type
+    redirect_to admin_certification_ship_path(@ship), notice: type && "Project type updated."
   end
 
   def update

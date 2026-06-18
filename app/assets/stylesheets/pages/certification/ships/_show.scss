@@ -326,6 +326,12 @@
     gap: var(--space-xs);
     margin-top: var(--space-s);
   }
+
+  &__claim-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+  }
 }
 
 @keyframes ship-review-pop {

@@ -153,8 +153,19 @@
           <% else %>
             <div class="ship-review__claim">
               <p>You don't currently hold the claim on this review.</p>
-              <%= button_to "Claim this review", admin_certification_ship_claim_path(@ship), method: :post,
-                    class: "action-btn action-btn--large action-btn--primary" %>
+              <div class="ship-review__claim-actions">
+                <%= button_to "Claim this review", admin_certification_ship_claim_path(@ship), method: :post,
+                      class: "action-btn action-btn--large action-btn--primary" %>
+                <%= form_with url: set_project_type_admin_certification_ship_path(@ship), method: :patch do %>
+                  <%= select_tag :project_type,
+                        options_for_select(
+                          [["Unknown", "", { disabled: true }], *Project::USER_SELECTABLE_TYPES.map { |t| [t, t] }],
+                          @ship.project.project_type
+                        ),
+                        onchange: "this.form.requestSubmit()",
+                        class: "ship-queue__select" %>
+                <% end %>
+              </div>
               <%= link_to "Back to queue", admin_certification_ships_path,
                     class: "action-btn action-btn--small action-btn--secondary" %>
             </div>
