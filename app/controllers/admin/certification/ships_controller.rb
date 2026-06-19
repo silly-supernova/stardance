@@ -78,12 +78,16 @@ class Admin::Certification::ShipsController < Admin::Certification::ApplicationC
 
   def update
     authorize @ship
+    return redirect_to admin_certification_ship_path(@ship), alert: “Ship is no longer pending.” unless @ship.pending?
+
+    @ship.reviewer = current_user
     if @ship.update(ship_params)
-      verb = @ship.approved? ? "Approved" : "Returned"
+      verb = @ship.approved? ? “Approved” : “Returned”
       count = ::Certification::Ship.reviewed_today(current_user)
       redirect_to admin_certification_ships_path,
-                  notice: "#{verb} “#{@ship.project.title}.” That's #{count} reviewed today. Keep going!"
+                  notice: “#{verb} “#{@ship.project.title}.” That's #{count} reviewed today. Keep going!”
     else
+      @reviewed_today = ::Certification::Ship.reviewed_today(current_user)
       render :show, status: :unprocessable_entity
     end
   end

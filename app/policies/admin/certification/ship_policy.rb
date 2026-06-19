@@ -8,8 +8,7 @@ class Admin::Certification::ShipPolicy < ApplicationPolicy
   def show? = user&.can_review? && not_own_project?
 
   def update?
-    return false unless user&.can_review? && not_own_project?
-    record.claim_held_by?(user) || (record.reviewer_id == user.id && record.claim_expired?)
+    user&.can_review? && not_own_project?
   end
 
   def next? = user&.can_review?
