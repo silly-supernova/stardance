@@ -5,7 +5,9 @@ services:
       dockerfile: dev.Dockerfile
     command: bin/dev
     ports:
-      - "3000:3000"
+      # Host port is per-worktree (set by bin/dev / bin/worktree-env.sh); the
+      # container always listens on 3000.
+      - "${WEB_PORT:-3000}:3000"
     volumes:
       - .:/app
       - node_modules_cache:/app/node_modules
@@ -13,6 +15,11 @@ services:
     environment:
       - RAILS_ENV=development
       - FERRET=${FERRET:-}
+      # Self-contained for the Docker path: inside the compose network the db is
+      # reached by service name, and the container binds 3000. These override the
+      # localhost/per-worktree values bin/worktree-env.sh derives for native runs.
+      - DATABASE_URL=postgresql://postgres:pass@db:5432/stardance_development
+      - PORT=3000
     depends_on:
       - db
 
@@ -25,7 +32,9 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_DB=stardance_development
     ports:
-      - "5432:5432"
+      # Host port is per-worktree (set by bin/dev / bin/worktree-env.sh) so many
+      # worktrees can run their own Postgres at once; container stays on 5432.
+      - "${DB_PORT:-5432}:5432"
 
 volumes:
   stardance_postgres_data:

@@ -10,6 +10,10 @@
 # Ignore all environment files.
 /.env*
 
+# Host-specific Docker overrides (e.g. linux/amd64 platform, pgvector pg18) —
+# kept out of the committed config; see CLAUDE.md.
+/docker-compose.override.yml
+
 # Ignore all logfiles and tempfiles.
 /log/*
 /tmp/*
@@ -77,3 +81,6 @@ vendor
 .venv
 
 staff-search
+
+# Playwright MCP scratch output (snapshots/screenshots from browser-driving agents)
+/.playwright-mcp

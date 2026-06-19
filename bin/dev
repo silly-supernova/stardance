@@ -1,11 +1,38 @@
 #!/usr/bin/env sh
 
+# Re-exec under the project's mise-managed toolchain. The shebang above picks up
+# whatever `ruby`/`node` is first on PATH (often the system Ruby), and recent
+# mise does NOT auto-activate from .ruby-version, so without this the wrong
+# toolchain runs. Guarded so it happens once, and only when mise is installed
+# (CI / non-mise contributors fall straight through to their own toolchain).
+if [ -z "$STARDANCE_TOOLCHAIN" ] && command -v mise >/dev/null 2>&1; then
+  _rv="$(sed 's/^ruby-//' .ruby-version 2>/dev/null)"
+  _nv="$(cat .node-version 2>/dev/null)"
+  STARDANCE_TOOLCHAIN=1 exec mise exec "ruby@${_rv:-3.4.3}" "node@${_nv:-22}" -- "$0" "$@"
+fi
+
+# This worktree's own deterministic web/db ports + DATABASE_URL.
+. "$(dirname "$0")/worktree-env.sh"
+
+if [ ! -f .env ]; then
+  echo "No .env found — run bin/setup first to provision this worktree." >&2
+  exit 1
+fi
+
+# Bring this worktree's database up on its own host port (DB_PORT is exported by
+# worktree-env.sh and consumed by docker-compose.yml).
+if command -v docker >/dev/null 2>&1; then
+  docker compose up -d db >/dev/null 2>&1 || true
+fi
+
+export PORT="${PORT:-$WEB_PORT}"
+export DATABASE_URL
+
+echo "==> Stardance [$WORKTREE_SLUG]  ->  http://localhost:$PORT   (db on :$DB_PORT)"
+
 if gem list --no-installed --exact --silent foreman; then
   echo "Installing foreman..."
   gem install foreman
 fi
-
-# Default to port 3000 if not specified
-export PORT="${PORT:-3000}"
 
 exec foreman start -f Procfile.dev --env /dev/null "$@"

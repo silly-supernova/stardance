@@ -7,9 +7,31 @@ You can't run in an interactive docker shell but you can execute one-off command
 
 ## Local setup on Apple Silicon / prod mirror
 
-Things the docs/README don't tell you that you have to discover to actually boot
-it. Keep the host-specific fixes in an **untracked `docker-compose.override.yml`**
-so the committed config and `Gemfile.lock` stay clean.
+### Turnkey per-worktree dev (start here)
+
+`bin/setup` (first time) then `bin/dev` (every run after) is all you need — both
+are worktree-aware so many worktrees run side by side without colliding:
+
+- **Own ports per worktree, deterministically.** `bin/worktree-env.sh` hashes the
+  worktree directory name into a stable web port (`3000+`) and db port (`5432+`),
+  falling back to the next free port on the rare hash collision. `bin/dev` prints
+  the URL it chose; run `bin/worktree-env.sh --print` to see the assignment
+  without starting anything.
+- **Own Postgres container per worktree.** Each worktree is already its own
+  Docker Compose *project* (named after its directory), so `docker compose up -d
+  db` makes an isolated container + volume; the host port is now `${DB_PORT}`
+  (set by the helper) instead of a hardcoded `5432`, which is what used to let
+  only one worktree's db run at a time. `bin/setup`/`bin/dev` bring it up and
+  point `.env`'s `DATABASE_URL` at `localhost:$DB_PORT` automatically.
+- **Toolchain is auto-selected.** Recent mise does NOT auto-activate from
+  `.ruby-version`, so `bin/setup`/`bin/dev` re-exec themselves under
+  `mise exec ruby@<.ruby-version> node@<.node-version>`. You don't need to prefix
+  commands with `mise exec` — but for one-off `bin/rails`/`bundle` invocations
+  that bypass these scripts, you still do (the bare `ruby` on PATH is system Ruby).
+
+Things below are what the docs/README don't tell you. Keep host-specific Docker
+fixes in the (now gitignored) **`docker-compose.override.yml`** so the committed
+config and `Gemfile.lock` stay clean.
 
 - **`.env` is required and not checked in.** A fresh checkout/worktree has no
   `.env` — `cp example.env .env` (its dev keys work; `dotenv-rails` loads it from

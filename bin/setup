@@ -1,10 +1,58 @@
 #!/usr/bin/env ruby
 require "fileutils"
 
+# Re-exec under the project's mise-managed toolchain. This file's shebang picks
+# up whatever `ruby` is first on PATH (often the system Ruby), and recent mise
+# does NOT auto-activate from .ruby-version, so without this the wrong Ruby/Node
+# would run bundle/yarn/rails. Guarded so it happens once, and only when mise is
+# installed (CI / non-mise contributors fall through to their own toolchain).
+if ENV["STARDANCE_TOOLCHAIN"].nil? && system("command -v mise > /dev/null 2>&1")
+  root = File.expand_path("..", __dir__)
+  rv = (File.read(File.join(root, ".ruby-version")).strip.sub(/\Aruby-/, "") rescue "3.4.3")
+  nv = (File.read(File.join(root, ".node-version")).strip rescue "22")
+  exec({ "STARDANCE_TOOLCHAIN" => "1" }, "mise", "exec", "ruby@#{rv}", "node@#{nv}", "--", "ruby", __FILE__, *ARGV)
+end
+
 APP_ROOT = File.expand_path("..", __dir__)
 
 def system!(*args)
   system(*args, exception: true)
+end
+
+# Load this worktree's deterministic ports + DATABASE_URL (see bin/worktree-env.sh).
+def worktree_env
+  env = {}
+  `sh #{File.join(__dir__, "worktree-env.sh")} --print`.each_line do |line|
+    key, _, value = line.strip.partition("=")
+    env[key] = value unless key.empty?
+  end
+  env
+end
+
+# Point .env's DATABASE_URL at this worktree's own db container (native Rails
+# reaches the Dockerized Postgres on localhost:DB_PORT, not the compose-only
+# "db" hostname). Idempotent: rewrites the line if present, appends otherwise.
+def ensure_database_url!(url)
+  lines = File.exist?(".env") ? File.readlines(".env") : []
+  replaced = false
+  lines.map! do |line|
+    if line =~ /\A\s*DATABASE_URL\s*=/
+      replaced = true
+      "DATABASE_URL=#{url}\n"
+    else
+      line
+    end
+  end
+  lines << "DATABASE_URL=#{url}\n" unless replaced
+  File.write(".env", lines.join)
+end
+
+def wait_for_postgres!
+  30.times do
+    return if system("docker compose exec -T db pg_isready -U postgres -q")
+    sleep 1
+  end
+  warn "Postgres did not become ready after 30s — continuing anyway."
 end
 
 FileUtils.chdir APP_ROOT do
@@ -17,6 +65,15 @@ FileUtils.chdir APP_ROOT do
     FileUtils.cp "example.env", ".env"
     puts "Copied example.env -> .env (its dev keys work as-is; edit for real secrets)"
   end
+
+  env = worktree_env
+  puts "Worktree '#{env['WORKTREE_SLUG']}' -> web :#{env['WEB_PORT']}, db :#{env['DB_PORT']}"
+  ENV["DB_PORT"] = env["DB_PORT"] # consumed by docker-compose.yml's db port mapping
+  ensure_database_url!(env["DATABASE_URL"])
+
+  puts "\n== Starting database (this worktree's own container on :#{env['DB_PORT']}) =="
+  system! "docker compose up -d db"
+  wait_for_postgres!
 
   puts "\n== Installing Ruby dependencies =="
   system("bundle check") || system!("bundle install")
