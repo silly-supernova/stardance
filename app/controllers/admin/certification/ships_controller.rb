@@ -25,8 +25,13 @@ class Admin::Certification::ShipsController < Admin::Certification::ApplicationC
     scope = scope.by_project_type(@project_type) if @project_type.present?
 
     @pagy, @ships = pagy(:offset,
-                         scope.includes(:reviewer, :returned_by, project: { memberships: :user })
-                              .order(created_at: @sort == "newest" ? :desc : :asc),
+                         scope.includes(
+                           :reviewer, :returned_by,
+                           project: {
+                             memberships: :user,
+                             posts: :postable
+                           }
+                         ).order(created_at: @sort == "newest" ? :desc : :asc),
                          limit: 25)
 
     @own_project_ids = current_user.memberships.pluck(:project_id).to_set
