@@ -1,6 +1,17 @@
 #!/usr/bin/env bash
 set -e
 
+# Re-exec under the project's mise-managed toolchain so bundle/yarn resolve to
+# the pinned Ruby/Node instead of whatever is first on PATH (often system Ruby
+# 2.6, which can't parse our Gemfile). Mirrors bin/dev / bin/setup. Guarded so
+# it runs once, and only when mise is installed.
+if [ -z "$STARDANCE_TOOLCHAIN" ] && command -v mise >/dev/null 2>&1; then
+  cd "$(dirname "$0")/.."
+  _rv="$(sed 's/^ruby-//' .ruby-version 2>/dev/null)"
+  _nv="$(cat .node-version 2>/dev/null)"
+  STARDANCE_TOOLCHAIN=1 exec mise exec "ruby@${_rv:-3.4.3}" "node@${_nv:-22}" -- "$0" "$@"
+fi
+
 echo "rubocop"
 bundle exec rubocop -A
 echo "linting views"

@@ -24,10 +24,16 @@ are worktree-aware so many worktrees run side by side without colliding:
   only one worktree's db run at a time. `bin/setup`/`bin/dev` bring it up and
   point `.env`'s `DATABASE_URL` at `localhost:$DB_PORT` automatically.
 - **Toolchain is auto-selected.** Recent mise does NOT auto-activate from
-  `.ruby-version`, so `bin/setup`/`bin/dev` re-exec themselves under
-  `mise exec ruby@<.ruby-version> node@<.node-version>`. You don't need to prefix
-  commands with `mise exec` — but for one-off `bin/rails`/`bundle` invocations
-  that bypass these scripts, you still do (the bare `ruby` on PATH is system Ruby).
+  `.ruby-version`, so the project's scripts re-exec themselves under
+  `mise exec ruby@<.ruby-version> node@<.node-version>` (see `bin/toolchain.rb`).
+  This now covers `bin/setup`, `bin/dev`, **and** the binstubs you reach for
+  directly — `bin/rails`, `bin/rake`, `bin/bundle`, `bin/rubocop`, `bin/brakeman`,
+  `bin/lint` — so `bin/rails test` from a fresh shell Just Works. **Always go
+  through `bin/*`, never the bare binary:** a bare `ruby`/`bundle` hits the macOS
+  system Ruby 2.6 and dies with ``\`windows\` is not a valid platform``; bare
+  `yarn` is the wrong version or missing (use `corepack yarn`); `psql` isn't on
+  the host (use `docker compose exec db psql`). If you must invoke a tool with no
+  binstub, prefix it with `mise exec ruby@<.ruby-version> node@<.node-version> --`.
 
 Things below are what the docs/README don't tell you. Keep host-specific Docker
 fixes in the (now gitignored) **`docker-compose.override.yml`** so the committed
