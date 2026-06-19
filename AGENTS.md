@@ -79,8 +79,105 @@ config and `Gemfile.lock` stay clean.
 
 - **Run all tests**: `bin/rails test`
 - **Lint & Fix**: `bin/lint`
+- **Run CI locally (mirror of GitHub Actions)**: `bin/ci-local`
 - **Start dev server**: `bin/dev`
 - **Database setup**: `bin/rails db:prepare`
+
+## PR workflow off `improved-agent-experience`
+
+This branch line (`improved-agent-experience` and its worktree branches like the
+randomly-named `dramatic-lark`) carries **dev/agent tooling only** — `bin/*`
+toolchain shims, per-worktree dev setup, `docker-compose` tweaks, this file, etc.
+Its entire diff vs `main` is that tooling. We develop features on top of it so we
+get the ergonomics, but **that tooling must never end up in a feature PR**. When
+opening a PR, follow these steps in order — do not skip any.
+
+### 1. Start from latest `main`, not from the tooling branch
+
+Pull the latest `main` into the working branch first, so we build on current main
+*and* keep the agent-experience tooling locally:
+
+```bash
+git fetch origin
+git merge origin/main          # incorporate latest main into this branch
+```
+
+Resolve any conflicts before continuing. The goal: this branch = latest `main` +
+agent tooling + your feature work.
+
+### 2. Code-quality review before finishing
+
+Before preparing the push, review the diff against repo conventions (see **Code
+Style & Conventions** above and `docs/branding.md` for visual work). Check for:
+
+- No unnecessary or dead code, no leftover debug logging, no commented-out blocks.
+- No gratuitous comments — comments explain *why*, not *what*; match the
+  surrounding file's density.
+- Rails/omakase RuboCop style, BEM SCSS, CSS classes instead of `style=` attrs,
+  reuse of existing components/partials.
+- Pundit policies on new controller actions; PaperTrail + audit logging on admin
+  changes; `lockbox`/`blind_index` on new encrypted fields.
+- Migrations created via `bin/rails generate migration` (never hand-written), and
+  **confirmed with the user** before running.
+
+Run `bin/lint` to auto-fix formatting, then re-read the diff.
+
+### 3. Run CI locally before pushing
+
+GitHub Actions (`.github/workflows/ci.yml`) gates the PR. Run the same checks
+locally first and get them green:
+
+```bash
+docker compose up -d db   # db_checks need the test database
+bin/ci-local
+```
+
+`bin/ci-local` mirrors every `ci.yml` job (Brakeman, RuboCop, ERB Lint, Prettier
+JS/TS + SCSS, Zeitwerk, schema-up-to-date, annotations). Do not push until it
+exits green. (`build.yml` is deploy-only and runs only on push to `main` — not
+part of PR verification.) If the local setup uses Docker, wrap commands per the
+**Environment** section (`docker compose run --service-ports web ...`).
+
+### 4. Push only the feature diff — exclude the tooling
+
+The PR must contain **only the diff between `main` and your feature work** — never
+the `improved-agent-experience` tooling commits. Create a properly-named branch
+(`feat/...`, `fix/...`, `chore/...`, `docs/...` — never the random worktree name)
+and replay only your feature commits onto `main`:
+
+```bash
+git fetch origin
+git branch feat/descriptive-name HEAD        # snapshot current work (keeps this branch intact)
+git rebase --onto origin/main origin/improved-agent-experience feat/descriptive-name
+git push -u origin feat/descriptive-name
+```
+
+`rebase --onto origin/main origin/improved-agent-experience` takes exactly the
+commits the work branch has on top of `improved-agent-experience` (your feature)
+and replays them onto `main`, dropping the tooling and any already-merged `main`
+commits. After the rebase, **verify the tooling is gone** before pushing:
+
+```bash
+git diff origin/main...feat/descriptive-name --stat   # should show ONLY feature files,
+                                                      # no bin/*, AGENTS.md, docker-compose, worktree-env
+```
+
+If tooling files still appear, stop and fix the branch — do not push.
+
+### 5. Open the PR — human writes the description
+
+Push the branch, then **the human writes the PR description, not the agent.** Use
+the repo template at `.github/pull_request_template.md` verbatim (the
+`what's this do?` / `show it works` / `ai?` sections) and let the human fill it in.
+Open it pre-populated with the empty template so they only fill the blanks:
+
+```bash
+gh pr create --base main --head feat/descriptive-name \
+  --title "<short title>" \
+  --body-file .github/pull_request_template.md --web
+```
+
+Do not author or auto-fill the PR body. Leave the template sections for the human.
 
 ## Architecture & Structure
 

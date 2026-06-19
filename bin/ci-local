@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+# Mirror of .github/workflows/ci.yml — run the same checks GitHub Actions runs,
+# locally, before pushing a PR. Keep this in lockstep with ci.yml: if a check is
+# added/removed there, update it here too. build.yml is deploy-only (push to
+# main/platform) and is intentionally NOT mirrored.
+set -uo pipefail
+
+# Re-exec under the project's mise-managed toolchain (see bin/lint / bin/toolchain.rb)
+# so bundle/yarn/rails resolve to the pinned Ruby/Node, not system Ruby 2.6.
+if [ -z "${STARDANCE_TOOLCHAIN:-}" ] && command -v mise >/dev/null 2>&1; then
+  cd "$(dirname "$0")/.."
+  _rv="$(sed 's/^ruby-//' .ruby-version 2>/dev/null)"
+  _nv="$(cat .node-version 2>/dev/null)"
+  STARDANCE_TOOLCHAIN=1 exec mise exec "ruby@${_rv:-3.4.3}" "node@${_nv:-22}" -- "$0" "$@"
+fi
+
+cd "$(dirname "$0")/.."
+
+failed=()
+run() {
+  local name="$1"; shift
+  echo "==> ${name}"
+  if "$@"; then
+    echo "    ok"
+  else
+    echo "    FAILED"
+    failed+=("$name")
+  fi
+}
+
+# --- `checks` job ---
+run "Brakeman"        bundle exec brakeman --no-pager
+run "RuboCop"         bundle exec rubocop
+run "ERB Lint"        bundle exec erb_lint --lint-all
+run "Prettier JS/TS"  yarn prettier --check "app/javascript/**/*.{js,jsx,ts,tsx}"
+run "Prettier SCSS"   yarn prettier --check "app/assets/stylesheets/**/*.{scss,css}"
+run "Zeitwerk"        env RAILS_ENV=test bundle exec rails zeitwerk:check
+
+# --- `db_checks` job (needs the test database; bring it up with `docker compose up -d db`) ---
+run "Schema up to date" bash -c '
+  RAILS_ENV=test bundle exec rails db:migrate >/dev/null &&
+  git diff --exit-code db/schema.rb'
+run "Annotations up to date" bundle exec annotaterb models --frozen
+
+echo
+if [ ${#failed[@]} -eq 0 ]; then
+  echo "All CI checks passed ✅"
+  exit 0
+else
+  echo "CI checks FAILED ❌: ${failed[*]}"
+  echo "Fix these (most are auto-fixable via bin/lint) and re-run bin/ci-local before pushing."
+  exit 1
+fi
