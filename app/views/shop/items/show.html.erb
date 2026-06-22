@@ -67,6 +67,23 @@
                     <% end %>
                 </div>
             <% end %>
+            <% if @unlocking_missions.present? %>
+                <div class="shop-order__achievement-requirement <%= 'shop-order__achievement-requirement--locked' if @mission_locked %>">
+                    <% if @mission_locked %>
+                        <div class="shop-order__achievement-requirement-header">Unlock by completing one of these missions:</div>
+                        <ul class="shop-order__achievement-list">
+                            <% @unlocking_missions.each do |mission| %>
+                                <li>
+                                    <span class="shop-order__achievement-name"><%= mission.name %></span>
+                                </li>
+                            <% end %>
+                        </ul>
+                    <% else %>
+                        <% mission_names = @unlocking_missions.map(&:name).to_sentence(two_words_connector: ' or ', last_word_connector: ', or ') %>
+                        <span>Unlocked via the "<%= mission_names %>" mission</span>
+                    <% end %>
+                </div>
+            <% end %>
             <div class="shop-order__description"><%= md(@shop_item.description) %></div>
              <%= render MarkdownContentComponent.new(markdown: @shop_item.long_description) %>
           <% if @shop_item.type == "ShopItem::ThirdPartyPhysical" %>
@@ -332,8 +349,8 @@
                   type: :submit,
                   form: "order-form",
                   leading_icon: "icons/tick.svg",
-                  text: @locked_by_achievement ? "Locked" : "Get!",
-                  disabled: @locked_by_achievement || !has_phone,
+                  text: (@locked_by_achievement || @mission_locked) ? "Locked" : "Get!",
+                  disabled: @locked_by_achievement || @mission_locked || !has_phone,
                   class: "shop-order__submit",
                   data: { "order-form-target": "submitButton" }
                 ) %>

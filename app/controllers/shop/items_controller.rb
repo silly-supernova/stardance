@@ -37,10 +37,8 @@ class Shop::ItemsController < Shop::BaseController
       return
     end
 
-    if @mission_submission.nil? && @shop_item.mission_locked_for?(current_user)
-      redirect_to shop_path, alert: "This item is locked behind a mission you haven't completed yet."
-      return
-    end
+    @mission_locked = @mission_submission.nil? && @shop_item.mission_locked_for?(current_user)
+    @unlocking_missions = @mission_locked ? @shop_item.unlocking_missions : []
 
     @user_region = user_region
 
