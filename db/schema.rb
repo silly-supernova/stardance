@@ -204,7 +204,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_19_200900) do
     t.text "recert_reason"
     t.bigint "returned_by_id"
     t.bigint "reviewer_id"
-    t.integer "stardust_earned"
+    t.float "stardust_earned"
     t.integer "status", default: 0, null: false
     t.datetime "updated_at", null: false
     t.index ["decided_at"], name: "index_certification_ship_reviews_on_decided_at"
