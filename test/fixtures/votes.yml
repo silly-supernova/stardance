@@ -4,18 +4,21 @@
 #
 # Table name: votes
 #
-#  id                 :bigint           not null, primary key
-#  discarded          :boolean          default(FALSE), not null
-#  originality_score  :integer
-#  reason             :text
-#  storytelling_score :integer
-#  technical_score    :integer
-#  usability_score    :integer
-#  created_at         :datetime         not null
-#  updated_at         :datetime         not null
-#  project_id         :bigint           not null
-#  ship_event_id      :bigint           not null
-#  user_id            :bigint           not null
+#  id                            :bigint           not null, primary key
+#  demo_opened                   :boolean          default(FALSE), not null
+#  discarded                     :boolean          default(FALSE), not null
+#  originality_score             :integer
+#  reason                        :text
+#  repo_opened                   :boolean          default(FALSE), not null
+#  storytelling_score            :integer
+#  technical_score               :integer
+#  time_taken_to_vote_in_seconds :integer
+#  usability_score               :integer
+#  created_at                    :datetime         not null
+#  updated_at                    :datetime         not null
+#  project_id                    :bigint           not null
+#  ship_event_id                 :bigint           not null
+#  user_id                       :bigint           not null
 #
 # Indexes
 #

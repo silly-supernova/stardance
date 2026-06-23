@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_22_180819) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_23_151542) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -1446,13 +1446,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_22_180819) do
 
   create_table "votes", force: :cascade do |t|
     t.datetime "created_at", null: false
+    t.boolean "demo_opened", default: false, null: false
     t.boolean "discarded", default: false, null: false
     t.integer "originality_score"
     t.bigint "project_id", null: false
     t.text "reason"
+    t.boolean "repo_opened", default: false, null: false
     t.bigint "ship_event_id", null: false
     t.integer "storytelling_score"
     t.integer "technical_score"
+    t.integer "time_taken_to_vote_in_seconds"
     t.datetime "updated_at", null: false
     t.integer "usability_score"
     t.bigint "user_id", null: false

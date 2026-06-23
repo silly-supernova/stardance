@@ -85,7 +85,11 @@ class Vote::Assignment < ApplicationRecord
   end
 
   def submit_vote(attributes)
-    vote = build_vote(attributes.merge(user: user, ship_event: ship_event, project: ship_event.project))
+    vote = build_vote(attributes.merge(
+      user: user,
+      ship_event: ship_event,
+      project: ship_event.project
+    ).merge(readable_telemetry_attributes))
 
     transaction do
       vote.save!
@@ -113,6 +117,14 @@ class Vote::Assignment < ApplicationRecord
       view_count: view_count + 1,
       updated_at: now
     )
+  end
+
+  def readable_telemetry_attributes(now: Time.current)
+    {
+      time_taken_to_vote_in_seconds: first_viewed_at && (now - first_viewed_at).round,
+      demo_opened: events.of_type("vote_demo_opened").exists?,
+      repo_opened: events.of_type("vote_repo_opened").exists?
+    }
   end
 
   private
