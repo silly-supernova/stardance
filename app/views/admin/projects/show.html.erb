@@ -111,6 +111,9 @@
           <%= button_to "Delete Project", delete_admin_project_path(@project), method: :post,
               data: { confirm: "Delete this project?" } %>
         <% end %>
+        <% if policy(@project).update? && @project.last_ship_event.present? %>
+          <button type="button" onclick="document.getElementById('clear-latest-ship-modal').showModal()">Clear Latest Ship</button>
+        <% end %>
       </div>
     </div>
 
@@ -147,6 +150,18 @@
           <%= text_area_tag :reason, "", rows: 3, required: true, placeholder: "Why staff is changing this project kind" %>
           <button type="submit">Update Project Kind</button>
           <button type="button" onclick="document.getElementById('change-hardware-stage-modal').close()">Cancel</button>
+        </form>
+      <% end %>
+    <% end %>
+
+    <% if policy(@project).update? && @project.last_ship_event.present? %>
+      <%= render layout: "shared/modal", locals: { id: "clear-latest-ship-modal", title: "Clear Latest Ship", description: "Permanently deletes the most recent ship event (its post, ledger entries, votes and review) and resets the project to an un-shipped draft. Can't be undone. Logged to PaperTrail." } do %>
+        <form action="<%= clear_latest_ship_admin_project_path(@project) %>" method="post" data-turbo-confirm="Permanently clear this project's most recent ship? This can't be undone.">
+          <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+          <%= label_tag :reason, "Audit reason" %>
+          <%= text_area_tag :reason, "", rows: 3, required: true, placeholder: "Why staff is clearing the latest ship" %>
+          <button type="submit">Clear Latest Ship</button>
+          <button type="button" onclick="document.getElementById('clear-latest-ship-modal').close()">Cancel</button>
         </form>
       <% end %>
     <% end %>

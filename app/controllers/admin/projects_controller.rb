@@ -124,6 +124,57 @@ class Admin::ProjectsController < Admin::ApplicationController
                 notice: "Project kind changed from #{hardware_stage_label(old_stage)} to #{hardware_stage_label(new_stage)}."
   end
 
+  # Wipes the project's most recent ship: destroys the ship event (and, via
+  # dependent associations, its post, ledger entries, vote assignments and
+  # mission submission; votes are nullified), removes the matching review, and
+  # resets the project to an un-shipped draft. Used to fully un-stick a project
+  # that was shipped under the wrong kind. Refuses to touch a paid-out ship.
+  def clear_latest_ship
+    @project = ::Project.unscoped.find(params[:id])
+    authorize @project, :update?
+
+    reason = params[:reason].to_s.strip
+    ship_event = @project.last_ship_event
+
+    if ship_event.nil?
+      redirect_to admin_project_path(@project), alert: "This project has no ship to clear."
+      return
+    end
+
+    if reason.blank?
+      redirect_to admin_project_path(@project), alert: "Explain why the latest ship is being cleared."
+      return
+    end
+
+    if ship_event.payout.present?
+      redirect_to admin_project_path(@project),
+                  alert: "Can't clear a ship that has already paid out. Resolve the payout first."
+      return
+    end
+
+    old_status = @project.ship_status
+    cleared = {
+      "ship_event_id" => ship_event.id,
+      "certification_status" => ship_event.certification_status,
+      "votes_count" => ship_event.votes_count,
+      "body" => ship_event.body
+    }
+
+    ApplicationRecord.transaction do
+      @project.ship_reviews.order(created_at: :desc).first&.destroy!
+      ship_event.destroy!
+      remaining_latest = @project.ship_event_posts.maximum(:created_at)
+      @project.update_columns(ship_status: "draft", shipped_at: remaining_latest)
+    end
+
+    log_admin_version("admin_clear_latest_ship",
+      "ship_status" => [ old_status, "draft" ],
+      "cleared_ship" => cleared,
+      "reason" => reason)
+
+    redirect_to admin_project_path(@project), notice: "Cleared the latest ship and reset the project to draft."
+  end
+
   def sync_last_ship_event_certification(new_status)
     ship_event = @project.last_ship_event
     return unless ship_event
