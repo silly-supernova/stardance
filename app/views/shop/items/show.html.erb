@@ -301,7 +301,7 @@
                     </div>
                 <% end %>
             </div>
-            <div class="shop-order__summary"<%= " hidden".html_safe if @mission_submission %>>
+            <div class="shop-order__summary <%= "shop-order__summary--hidden" if @mission_submission %>">
                 <h3 class="shop-order__summary-heading">Order Summary</h3>
                 <p class="shop-order__summary-balance"><%= safe_join([ "Current Balance: ", stardust_icon, " ", @user_balance.to_s ]) %></p>
                 <div class="shop-order__summary-content">
