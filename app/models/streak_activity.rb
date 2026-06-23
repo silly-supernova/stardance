@@ -61,7 +61,10 @@ class StreakActivity < ApplicationRecord
       record
     end
 
-    def backfill_for_user!(user)
+    def backfill_for_user!(user, throttle: 0)
+      cache_key = "streak_backfill_running:#{user.id}"
+      return nil unless Rails.cache.write(cache_key, true, expires_in: 10.minutes, unless_exist: true)
+
       return nil unless user.hackatime_identity.present?
 
       linked_projects = user.hackatime_projects.where.not(project_id: nil)
@@ -71,26 +74,26 @@ class StreakActivity < ApplicationRecord
       today = streak_date_for(Time.current, user.timezone)
       window_start = Date.parse(HackatimeService::START_DATE)
 
-      existing_dates = where(user_id: user.id, activity_date: window_start..today)
-                         .pluck(:activity_date).to_set
-      missing_dates = (window_start...today).reject { |d| existing_dates.include?(d) }
-      return 0 if missing_dates.empty?
+      count = 0
+      (window_start...today).each do |date|
+        seconds = HackatimeService.fetch_total_seconds_for_projects(
+          user.hackatime_identity.uid,
+          project_keys,
+          start_date: date.to_s,
+          end_date: (date + 1.day).to_s,
+          access_token: user.hackatime_identity.access_token
+        )
+        next if seconds.nil?
 
-      daily = HackatimeService.fetch_daily_seconds_for_projects(
-        user.hackatime_identity.uid,
-        project_keys,
-        start_date: missing_dates.first.to_s,
-        end_date: today.to_s,
-        access_token: user.hackatime_identity.access_token
-      )
-
-      missing_dates.each do |date|
-        seconds = daily.fetch(date, 0)
-        find_or_initialize_by(user_id: user.id, activity_date: date)
-          .update!(coded_seconds: seconds)
+        record = find_or_initialize_by(user_id: user.id, activity_date: date)
+        next if record.persisted? && record.coded_seconds == seconds
+        record.update!(coded_seconds: seconds)
+        count += 1
+        sleep throttle if throttle > 0
       end
-
-      missing_dates.size
+      count
+    ensure
+      Rails.cache.delete(cache_key)
     end
 
     def streak_date_for(time, timezone)

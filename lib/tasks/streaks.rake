@@ -17,22 +17,22 @@ namespace :streaks do
     errored = 0
 
     users.find_each.with_index(1) do |user, i|
-      count = StreakActivity.backfill_for_user!(user)
+      count = StreakActivity.backfill_for_user!(user, throttle: 0.25)
       if count.nil?
         skipped += 1
-        puts "  [#{i}/#{total}] #{user.username || user.id} — skipped (no hackatime/projects)"
+        puts "  [#{i}/#{total}] #{user.display_name || user.id} — skipped"
       elsif count.zero?
         skipped += 1
-        puts "  [#{i}/#{total}] #{user.username || user.id} — already up to date"
+        puts "  [#{i}/#{total}] #{user.display_name || user.id} — already up to date"
       else
         filled += 1
-        puts "  [#{i}/#{total}] #{user.username || user.id} — backfilled #{count} day(s)"
+        puts "  [#{i}/#{total}] #{user.display_name || user.id} — backfilled #{count} day(s)"
       end
 
-      sleep 0.5
+      sleep 1
     rescue => e
       errored += 1
-      puts "  [#{i}/#{total}] #{user.username || user.id} — ERROR: #{e.message}"
+      puts "  [#{i}/#{total}] #{user.display_name || user.id} — ERROR: #{e.message}"
     end
 
     puts
