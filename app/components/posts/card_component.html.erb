@@ -82,13 +82,21 @@
   <footer class="feed-post-card__actions">
     <% if show_comments && interaction_post&.postable_type == "Post::Devlog" %>
       <div class="feed-post-card__comment-action" data-controller="comment-modal">
-        <button type="button"
-                class="feed-post-card__action"
-                aria-label="<%= interaction_postable.comments_count %> comments"
-                data-action="comment-modal#open">
+        <% comment_action_inner = capture do %>
           <%= inline_svg_tag "icons/comment.svg", class: "feed-post-card__action-icon" %>
           <span id="<%= comments_count_id %>"><%= interaction_postable.comments_count %></span>
-        </button>
+        <% end %>
+        <% if comments_url.present? %>
+          <%= link_to comments_url,
+                class: "feed-post-card__action",
+                aria: { label: "#{interaction_postable.comments_count} comments" },
+                data: { action: "comment-modal#open" } do %><%= comment_action_inner %><% end %>
+        <% else %>
+          <button type="button"
+                  class="feed-post-card__action"
+                  aria-label="<%= interaction_postable.comments_count %> comments"
+                  data-action="comment-modal#open"><%= comment_action_inner %></button>
+        <% end %>
 
         <dialog class="comment-modal"
                 data-comment-modal-target="dialog"

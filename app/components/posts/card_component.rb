@@ -149,6 +149,11 @@ module Posts
       display_post&.views_count.to_i
     end
 
+    def comments_url
+      base = card_link_url
+      "#{base}#comments" if base.present?
+    end
+
     def comments_count_id
       if interaction_postable.present?
         "comments_count_#{interaction_postable.class.name.underscore.tr('/', '_')}_#{interaction_postable.id}"

@@ -15,7 +15,14 @@ export default class extends Controller {
     this.dialogTarget.removeEventListener("close", this._onClose);
   }
 
-  open() {
+  open(event) {
+    // The trigger is a real link to the devlog's comments; let modified clicks
+    // (open in new tab/window) fall through to the browser's default.
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)
+      return;
+
+    event.preventDefault();
+
     this._scrollY = window.scrollY;
     this._previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
