@@ -1037,8 +1037,7 @@ turbo-frame#project_hero {
   &--approved {
     background: color-mix(in srgb, var(--badge-accent) 18%, transparent);
     color: var(--badge-accent);
-    border: 1px solid
-      color-mix(in srgb, var(--badge-accent) 40%, transparent);
+    border: 1px solid color-mix(in srgb, var(--badge-accent) 40%, transparent);
   }
 
   &--clickable {
@@ -1050,8 +1049,16 @@ turbo-frame#project_hero {
 
     &:hover,
     &:focus-visible {
-      background: color-mix(in srgb, var(--badge-accent, var(--color-brand-salmon)) 30%, transparent);
-      border-color: color-mix(in srgb, var(--badge-accent, var(--color-brand-salmon)) 65%, transparent);
+      background: color-mix(
+        in srgb,
+        var(--badge-accent, var(--color-brand-salmon)) 30%,
+        transparent
+      );
+      border-color: color-mix(
+        in srgb,
+        var(--badge-accent, var(--color-brand-salmon)) 65%,
+        transparent
+      );
       outline: none;
     }
   }

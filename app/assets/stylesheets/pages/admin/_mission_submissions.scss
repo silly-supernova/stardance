@@ -606,7 +606,11 @@
   &__momentum {
     padding: var(--space-s) var(--space-l);
     border-radius: 8px;
-    background: linear-gradient(90deg, var(--color-green-500), var(--color-green-400));
+    background: linear-gradient(
+      90deg,
+      var(--color-green-500),
+      var(--color-green-400)
+    );
     color: var(--color-brand-off-white);
     font-weight: 600;
     font-size: 0.95rem;
