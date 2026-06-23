@@ -634,6 +634,7 @@ Rails.application.routes.draw do
         post :restore
         post :delete
         post :update_ship_status
+        patch :update_hardware_stage
         post :force_state
         get  :votes
       end

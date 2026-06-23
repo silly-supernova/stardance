@@ -79,14 +79,49 @@ class Admin::ProjectsController < Admin::ApplicationController
     @project.update_column(:ship_status, new_status)
     sync_last_ship_event_certification(new_status)
 
-    ::PaperTrail::Version.create!(
-      item: @project,
-      event: "update",
-      whodunnit: current_user.id.to_s,
-      object_changes: { ship_status: [ old_status, new_status ] }
-    )
+    log_admin_version("update", ship_status: [ old_status, new_status ])
 
     redirect_to admin_project_path(@project), notice: "Ship status changed from #{old_status} to #{new_status}."
+  end
+
+  def update_hardware_stage
+    @project = ::Project.unscoped.find(params[:id])
+    authorize @project, :update?
+
+    old_stage = @project.hardware_stage
+    new_stage = params[:hardware_stage].presence
+    reason = params[:reason].to_s.strip
+
+    unless ([ nil ] + ::Project::HARDWARE_STAGES).include?(new_stage)
+      redirect_to admin_project_path(@project), alert: "Invalid project kind."
+      return
+    end
+
+    if reason.blank?
+      redirect_to admin_project_path(@project), alert: "Explain why the project kind is being changed."
+      return
+    end
+
+    if old_stage == new_stage
+      redirect_to admin_project_path(@project), alert: "Project kind is already #{hardware_stage_label(new_stage)}."
+      return
+    end
+
+    funding_lock_bypassed = @project.has_any_funding_request?
+
+    @project.hardware_stage = new_stage
+    ::PaperTrail.request(enabled: false) do
+      @project.save!(validate: false)
+    end
+
+    log_admin_version("admin_hardware_stage_update",
+      "hardware_stage" => [ old_stage, new_stage ],
+      "project_kind" => [ hardware_stage_label(old_stage), hardware_stage_label(new_stage) ],
+      "reason" => reason,
+      "funding_lock_bypassed" => funding_lock_bypassed)
+
+    redirect_to admin_project_path(@project),
+                notice: "Project kind changed from #{hardware_stage_label(old_stage)} to #{hardware_stage_label(new_stage)}."
   end
 
   def sync_last_ship_event_certification(new_status)
@@ -122,13 +157,28 @@ class Admin::ProjectsController < Admin::ApplicationController
 
     @project.update_column(state_column, new_state)
 
-    ::PaperTrail::Version.create!(
-      item: @project,
-      event: "update",
-      whodunnit: current_user.id.to_s,
-      object_changes: { state_column => [ old_state, new_state ] }
-    )
+    log_admin_version("update", state_column => [ old_state, new_state ])
 
     redirect_to admin_project_path(@project), notice: "State forced from #{old_state} to #{new_state}."
+  end
+
+  private
+
+  # Records a staff action against @project in the PaperTrail audit log.
+  def log_admin_version(event, object_changes)
+    ::PaperTrail::Version.create!(
+      item: @project,
+      event: event,
+      whodunnit: current_user.id.to_s,
+      object_changes: object_changes
+    )
+  end
+
+  def hardware_stage_label(stage)
+    case stage
+    when "design" then "Hardware - design"
+    when "build" then "Hardware - build"
+    else "Software"
+    end
   end
 end

@@ -23,7 +23,18 @@
             <button type="button" onclick="document.getElementById('change-ship-status-modal').showModal()">Change</button>
           <% end %>
         </dd>
-        <dt>Type</dt>         <dd><%= @project.project_type.presence || content_tag(:span, "Not set", class: "admin-user-show__muted") %></dd>
+        <dt>Kind</dt>
+        <dd>
+          <% if @project.hardware? %>
+            Hardware — <%= @project.hardware_stage.titleize %>
+          <% else %>
+            Software
+          <% end %>
+          <% if policy(@project).update? %>
+            <button type="button" onclick="document.getElementById('change-hardware-stage-modal').showModal()">Change</button>
+          <% end %>
+        </dd>
+        <dt>Classifier type</dt><dd><%= @project.project_type.presence || content_tag(:span, "Not set", class: "admin-user-show__muted") %></dd>
         <dt>Categories</dt>   <dd><%= @project.project_categories.any? ? @project.project_categories.join(", ") : content_tag(:span, "None", class: "admin-user-show__muted") %></dd>
         <dt>Created</dt>      <dd><%= @project.created_at.strftime("%Y-%m-%d %H:%M") %></dd>
         <dt>Updated</dt>      <dd><%= @project.updated_at.strftime("%Y-%m-%d %H:%M") %></dd>
@@ -115,6 +126,29 @@
         <button type="submit">Update Status</button>
         <button type="button" onclick="document.getElementById('change-ship-status-modal').close()">Cancel</button>
       </form>
+    <% end %>
+
+    <% if policy(@project).update? %>
+      <%= render layout: "shared/modal", locals: { id: "change-hardware-stage-modal", title: "Change Project Kind", description: "Override whether this is treated as software or hardware. Bypasses the funding-request lock and is logged to PaperTrail." } do %>
+        <form action="<%= update_hardware_stage_admin_project_path(@project) %>" method="post">
+          <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+          <%= hidden_field_tag :_method, "patch" %>
+          <%= label_tag :hardware_stage, "Project Kind" %>
+          <%= select_tag :hardware_stage,
+                options_for_select(
+                  [
+                    [ "Software", "" ],
+                    [ "Hardware — design stage / needs funding", "design" ],
+                    [ "Hardware — build stage / already has parts", "build" ]
+                  ],
+                  @project.hardware_stage.to_s
+                ) %>
+          <%= label_tag :reason, "Audit reason" %>
+          <%= text_area_tag :reason, "", rows: 3, required: true, placeholder: "Why staff is changing this project kind" %>
+          <button type="submit">Update Project Kind</button>
+          <button type="button" onclick="document.getElementById('change-hardware-stage-modal').close()">Cancel</button>
+        </form>
+      <% end %>
     <% end %>
 
     <%= render "admin/shared/ledger_log",
