@@ -179,6 +179,23 @@
                     method: :post,
                     title: "Refresh verification status from HCA",
                     data: { confirm: "Refresh verification status for #{@user.display_name}?" } %>
+      <% if policy(@user).ban? %>
+        <% if @user.banned? %>
+          <%= button_to "🔓 Unban", admin_user_ban_path(@user), method: :delete,
+              form: { onsubmit: "return confirm(#{("Unban #{@user.display_name}?").to_json})" } %>
+        <% else %>
+          <button type="button" onclick="document.getElementById('ban-user-modal').showModal()">🚫 Ban User</button>
+          <%= render layout: "shared/modal", locals: { id: "ban-user-modal", title: "Ban User", description: "Prevents access to the site (except /home)." } do %>
+            <form action="<%= admin_user_ban_path(@user) %>" method="post">
+              <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+              <%= label_tag :reason, "Reason (optional)" %>
+              <%= text_area_tag :reason, "", placeholder: "Reason for ban..." %>
+              <button type="submit">Confirm Ban</button>
+              <button type="button" onclick="document.getElementById('ban-user-modal').close()">Cancel</button>
+            </form>
+          <% end %>
+        <% end %>
+      <% end %>
       <% if current_user.admin? %>
         <%
           all_roles = [
@@ -379,21 +396,6 @@
         <% end %>
 
         <% if policy(@user).ban? %>
-          <% if @user.banned? %>
-            <%= button_to "🔓 Unban", admin_user_ban_path(@user), method: :delete,
-                form: { onsubmit: "return confirm(#{("Unban #{@user.display_name}?").to_json})" } %>
-          <% else %>
-            <button type="button" onclick="document.getElementById('ban-user-modal').showModal()">🚫 Ban User</button>
-            <%= render layout: "shared/modal", locals: { id: "ban-user-modal", title: "Ban User", description: "Prevents access to the site (except /home)." } do %>
-              <form action="<%= admin_user_ban_path(@user) %>" method="post">
-                <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
-                <%= label_tag :reason, "Reason (optional)" %>
-                <%= text_area_tag :reason, "", placeholder: "Reason for ban..." %>
-                <button type="submit">Confirm Ban</button>
-                <button type="button" onclick="document.getElementById('ban-user-modal').close()">Cancel</button>
-              </form>
-            <% end %>
-          <% end %>
           <% if @user.manual_ysws_override? %>
             <%= button_to "Remove YSWS override", admin_user_ysws_override_path(@user), method: :patch,
                 params: { manual_ysws_override: "false" },
