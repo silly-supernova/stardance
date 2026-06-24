@@ -26,7 +26,7 @@ class Admin::Certification::YswsPolicy < ApplicationPolicy
   # AI-classified project_type.
   class Scope < ApplicationPolicy::Scope
     def resolve
-      return scope.all if user.nil? || user.admin?
+      return scope.all || user.admin?
 
       if user.hardware_guardian_of_integrity?
         scope.hardware
