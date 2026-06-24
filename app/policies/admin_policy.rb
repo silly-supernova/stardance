@@ -16,7 +16,7 @@ class AdminPolicy < ApplicationPolicy
   end
 
   def access_ysws_review?
-    user.admin? || user.has_role?(:guardian_of_integrity)
+    user.can_review_ysws?
   end
 
   def access_blazer?

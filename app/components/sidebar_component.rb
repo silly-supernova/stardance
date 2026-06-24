@@ -56,7 +56,8 @@ class SidebarComponent < ViewComponent::Base
     end
 
     # Guardians of integrity only (not admins): YSWS certification review queue.
-    if signed_in? && user.guardian_of_integrity?
+    # Both subcategories — regular and hardware GOI — get the link.
+    if signed_in? && user.guardian_of_integrity_any?
       items << { slug: "guard", label: "Lets go GOI", path: helpers.admin_certification_ysws_reviews_path, icon: "eye" }
     end
 

@@ -81,6 +81,12 @@ module Certification
         : joins(:project).where(projects: { project_type: type })
     }
 
+    # Hardware vs. software split for the GOI subcategories. "Hardware" is the
+    # canonical Project#hardware? marker (hardware_stage present), NOT the
+    # AI-classified project_type. Consumed by Admin::Certification::YswsPolicy::Scope.
+    scope :hardware, -> { joins(:project).where.not(projects: { hardware_stage: nil }) }
+    scope :non_hardware, -> { joins(:project).where(projects: { hardware_stage: nil }) }
+
     # Count of still-pending child devlog reviews. Available only on records
     # loaded through .with_todo_devlog_count.
     def todo_devlog_count

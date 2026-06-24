@@ -5,7 +5,9 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
     @sort         = params[:sort].presence_in(%w[length todo])
     @dir          = params[:dir] == "asc" ? "asc" : "desc"
 
-    scope = ::Certification::Ysws.where(reviewed_at: nil, returned_at: nil)
+    # policy_scope splits the queue by GOI subcategory: a regular GOI sees only
+    # software reviews, a Hardware GOI only hardware reviews, admins see all.
+    scope = policy_scope(::Certification::Ysws).where(reviewed_at: nil, returned_at: nil)
 
     # Type filter options are whatever project types are actually present in the
     # pending queue (plus an "unclassified" bucket) — never hardcoded.
