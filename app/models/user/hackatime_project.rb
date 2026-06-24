@@ -22,6 +22,8 @@
 #  fk_rails_...  (user_id => users.id)
 #
 class User::HackatimeProject < ApplicationRecord
+  include FunnelResyncTrigger
+
   belongs_to :user
   belongs_to :project, optional: true
 
