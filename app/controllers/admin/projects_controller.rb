@@ -140,13 +140,14 @@ class Admin::ProjectsController < Admin::ApplicationController
     redirect_to admin_project_path(@project), notice: notice
   end
 
-  # Wipes the project's most recent ship: destroys the ship event (and, via
-  # dependent associations, its post, ledger entries, vote assignments and
-  # mission submission; votes are nullified), removes the matching review and
-  # any YSWS review it generated, and resets the project to an un-shipped draft.
-  # Used to fully un-stick a project that was shipped under the wrong kind.
-  # Refuses to touch a paid-out ship.
-  def clear_latest_ship
+  # Soft-resets the project's most recent ship back to an un-shipped draft so the
+  # owner can fix it and re-ship. NOTHING IS DELETED — the ship event, its
+  # review, votes, YSWS links and ledger entries are all preserved for history
+  # and audit. We only flip status columns: the project back to draft, the ship
+  # event's certification back to pending (so it no longer blocks re-shipping),
+  # and clear shipped_at so it reads as un-shipped. Refuses to reset a paid-out
+  # ship.
+  def reset_latest_ship
     @project = ::Project.unscoped.find(params[:id])
     authorize @project, :update?
 
@@ -154,47 +155,37 @@ class Admin::ProjectsController < Admin::ApplicationController
     ship_event = @project.last_ship_event
 
     if ship_event.nil?
-      redirect_to admin_project_path(@project), alert: "This project has no ship to clear."
+      redirect_to admin_project_path(@project), alert: "This project has no ship to reset."
       return
     end
 
     if reason.blank?
-      redirect_to admin_project_path(@project), alert: "Explain why the latest ship is being cleared."
+      redirect_to admin_project_path(@project), alert: "Explain why the latest ship is being reset."
       return
     end
 
     if ship_event.payout.present?
       redirect_to admin_project_path(@project),
-                  alert: "Can't clear a ship that has already paid out. Resolve the payout first."
+                  alert: "Can't reset a ship that has already paid out. Resolve the payout first."
       return
     end
 
     old_status = @project.ship_status
-    cleared = {
-      "ship_event_id" => ship_event.id,
-      "certification_status" => ship_event.certification_status,
-      "votes_count" => ship_event.votes_count,
-      "body" => ship_event.body
-    }
+    old_cert = ship_event.certification_status
 
     ApplicationRecord.transaction do
-      review = @project.ship_reviews.order(created_at: :desc).first
-      # YSWS reviews FK to both the ship event and its review with no cascade /
-      # dependent, so clear them first or the destroys below hit InvalidForeignKey.
-      ::Certification::Ysws.where(post_ship_event_id: ship_event.id).destroy_all
-      ::Certification::Ysws.where(ship_cert_id: review.id).destroy_all if review
-      review&.destroy!
-      ship_event.destroy!
-      remaining_latest = @project.ship_event_posts.maximum(:created_at)
-      @project.update_columns(ship_status: "draft", shipped_at: remaining_latest)
+      ship_event.update_columns(certification_status: "pending")
+      @project.update_columns(ship_status: "draft", shipped_at: nil)
     end
 
-    log_admin_version("admin_clear_latest_ship",
+    log_admin_version("admin_reset_latest_ship",
       "ship_status" => [ old_status, "draft" ],
-      "cleared_ship" => cleared,
+      "ship_event_id" => ship_event.id,
+      "certification_status" => [ old_cert, "pending" ],
       "reason" => reason)
 
-    redirect_to admin_project_path(@project), notice: "Cleared the latest ship and reset the project to draft."
+    redirect_to admin_project_path(@project),
+                notice: "Reset the latest ship back to draft. Nothing was deleted — the ship and its review are preserved."
   end
 
   def sync_last_ship_event_certification(new_status)

@@ -112,7 +112,7 @@
               data: { confirm: "Delete this project?" } %>
         <% end %>
         <% if policy(@project).update? && @project.last_ship_event.present? %>
-          <button type="button" onclick="document.getElementById('clear-latest-ship-modal').showModal()">Clear Latest Ship</button>
+          <button type="button" onclick="document.getElementById('reset-latest-ship-modal').showModal()">Reset Latest Ship</button>
         <% end %>
       </div>
     </div>
@@ -155,13 +155,13 @@
     <% end %>
 
     <% if policy(@project).update? && @project.last_ship_event.present? %>
-      <%= render layout: "shared/modal", locals: { id: "clear-latest-ship-modal", title: "Clear Latest Ship", description: "Permanently deletes the most recent ship event (its post, ledger entries, votes and review) and resets the project to an un-shipped draft. Can't be undone. Logged to PaperTrail." } do %>
-        <form action="<%= clear_latest_ship_admin_project_path(@project) %>" method="post" data-turbo-confirm="Permanently clear this project's most recent ship? This can't be undone.">
+      <%= render layout: "shared/modal", locals: { id: "reset-latest-ship-modal", title: "Reset Latest Ship", description: "Soft-resets the project to an un-shipped draft so the owner can fix it and re-ship. Nothing is deleted — the ship event, its review, votes and YSWS links are all kept. Logged to PaperTrail." } do %>
+        <form action="<%= reset_latest_ship_admin_project_path(@project) %>" method="post" data-turbo-confirm="Reset this project's latest ship back to draft? Nothing is deleted.">
           <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
           <%= label_tag :reason, "Audit reason" %>
-          <%= text_area_tag :reason, "", rows: 3, required: true, placeholder: "Why staff is clearing the latest ship" %>
-          <button type="submit">Clear Latest Ship</button>
-          <button type="button" onclick="document.getElementById('clear-latest-ship-modal').close()">Cancel</button>
+          <%= text_area_tag :reason, "", rows: 3, required: true, placeholder: "Why staff is resetting the latest ship" %>
+          <button type="submit">Reset Latest Ship</button>
+          <button type="button" onclick="document.getElementById('reset-latest-ship-modal').close()">Cancel</button>
         </form>
       <% end %>
     <% end %>

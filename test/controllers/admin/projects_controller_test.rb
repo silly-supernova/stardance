@@ -98,85 +98,63 @@ class Admin::ProjectsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "design", @project.reload.hardware_stage
   end
 
-  test "admin can clear the latest ship and reset the project to draft" do
+  test "admin can soft-reset the latest ship to draft without deleting anything" do
     ship_event = Post::ShipEvent.create!(body: "Shipped as software", certification_status: "returned", hours_at_ship: 1)
     Post.create!(project: @project, user: @owner, postable: ship_event)
-    @project.ship_reviews.create!(status: :returned, feedback: "Please switch this to hardware.")
-    @project.update_column(:ship_status, "needs_changes")
+    review = @project.ship_reviews.create!(status: :returned, feedback: "Please switch this to hardware.")
+    Certification::Ysws.create!(post_ship_event: ship_event, ship_cert: review, project: @project, user: @owner, original_minutes: 60)
+    @project.update_columns(ship_status: "needs_changes", shipped_at: Time.current)
 
     sign_in @admin
 
-    assert_difference [ "Post::ShipEvent.count", "Certification::Ship.count" ], -1 do
-      post clear_latest_ship_admin_project_path(@project), params: {
-        reason: "Converted to hardware; clearing the bad software ship."
+    # Nothing is deleted — the ship event, review and YSWS link all survive.
+    assert_no_difference [ "Post::ShipEvent.count", "Certification::Ship.count", "Certification::Ysws.count" ] do
+      post reset_latest_ship_admin_project_path(@project), params: {
+        reason: "Converted to hardware; resetting the software ship."
       }
     end
 
     assert_redirected_to admin_project_path(@project)
     @project.reload
     assert_equal "draft", @project.ship_status
-    assert_nil @project.last_ship_event
+    assert_nil @project.shipped_at
+    assert_equal ship_event, @project.last_ship_event, "the ship event is preserved"
+    assert_equal "pending", ship_event.reload.certification_status, "certification is reset so it no longer blocks re-shipping"
 
     version = PaperTrail::Version.where(item_type: "Project", item_id: @project.id.to_s).order(:created_at).last
-    assert_equal "admin_clear_latest_ship", version.event
+    assert_equal "admin_reset_latest_ship", version.event
     assert_equal [ "needs_changes", "draft" ], version.object_changes["ship_status"]
-    assert_equal "Converted to hardware; clearing the bad software ship.", version.object_changes["reason"]
+    assert_equal [ "returned", "pending" ], version.object_changes["certification_status"]
   end
 
-  test "clearing a ship also removes the YSWS review it generated" do
-    ship_event = Post::ShipEvent.create!(body: "Approved ship", certification_status: "approved", hours_at_ship: 1)
-    Post.create!(project: @project, user: @owner, postable: ship_event)
-    review = @project.ship_reviews.create!(status: :approved, reviewer: @admin)
-    Certification::Ysws.create!(
-      post_ship_event: ship_event,
-      ship_cert: review,
-      project: @project,
-      user: @owner,
-      original_minutes: 60
-    )
-    @project.update_column(:ship_status, "approved")
-
-    sign_in @admin
-
-    assert_difference [ "Post::ShipEvent.count", "Certification::Ship.count", "Certification::Ysws.count" ], -1 do
-      post clear_latest_ship_admin_project_path(@project), params: {
-        reason: "Wrong kind; clearing the approved ship and its YSWS review."
-      }
-    end
-
-    assert_redirected_to admin_project_path(@project)
-    assert_equal "draft", @project.reload.ship_status
-  end
-
-  test "cannot clear a ship that has already paid out" do
+  test "cannot reset a ship that has already paid out" do
     ship_event = Post::ShipEvent.create!(body: "Paid", certification_status: "approved", hours_at_ship: 1, payout: 42.0)
     Post.create!(project: @project, user: @owner, postable: ship_event)
     @project.update_column(:ship_status, "approved")
 
     sign_in @admin
 
-    assert_no_difference "Post::ShipEvent.count" do
-      post clear_latest_ship_admin_project_path(@project), params: { reason: "trying to clear a paid ship" }
-    end
+    post reset_latest_ship_admin_project_path(@project), params: { reason: "trying to reset a paid ship" }
 
     assert_redirected_to admin_project_path(@project)
     assert_equal "approved", @project.reload.ship_status
+    assert_equal "approved", ship_event.reload.certification_status
   end
 
-  test "clearing the latest ship requires a reason" do
+  test "resetting the latest ship requires a reason" do
     ship_event = Post::ShipEvent.create!(body: "x", certification_status: "returned", hours_at_ship: 1)
     Post.create!(project: @project, user: @owner, postable: ship_event)
+    @project.update_column(:ship_status, "needs_changes")
 
     sign_in @admin
 
-    assert_no_difference "Post::ShipEvent.count" do
-      post clear_latest_ship_admin_project_path(@project), params: { reason: "   " }
-    end
+    post reset_latest_ship_admin_project_path(@project), params: { reason: "   " }
 
     assert_redirected_to admin_project_path(@project)
+    assert_equal "needs_changes", @project.reload.ship_status
   end
 
-  test "helper cannot clear the latest ship" do
+  test "helper cannot reset the latest ship" do
     ship_event = Post::ShipEvent.create!(body: "x", certification_status: "returned", hours_at_ship: 1)
     Post.create!(project: @project, user: @owner, postable: ship_event)
 
@@ -184,10 +162,9 @@ class Admin::ProjectsControllerTest < ActionDispatch::IntegrationTest
     helper.update!(granted_roles: %w[helper])
     sign_in helper
 
-    assert_no_difference "Post::ShipEvent.count" do
-      post clear_latest_ship_admin_project_path(@project), params: { reason: "no perms" }, as: :json
-    end
+    post reset_latest_ship_admin_project_path(@project), params: { reason: "no perms" }, as: :json
 
     assert_response :forbidden
+    assert_equal "returned", ship_event.reload.certification_status
   end
 end

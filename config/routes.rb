@@ -635,7 +635,7 @@ Rails.application.routes.draw do
         post :delete
         post :update_ship_status
         patch :update_hardware_stage
-        post :clear_latest_ship
+        post :reset_latest_ship
         post :force_state
         get  :votes
       end
