@@ -108,17 +108,26 @@ class Admin::ProjectsController < Admin::ApplicationController
     end
 
     funding_lock_bypassed = @project.has_any_funding_request?
+    # Setting Software overrules the AI classifier. Without this, a stale
+    # project_type == "Hardware" would keep the project out of the review queue
+    # (Certification::Ship.excluding_hardware) even after the override.
+    old_project_type = @project.project_type
+    clear_classifier = new_stage.nil? && old_project_type == "Hardware"
 
     @project.hardware_stage = new_stage
+    @project.project_type = nil if clear_classifier
     ::PaperTrail.request(enabled: false) do
       @project.save!(validate: false)
     end
 
-    log_admin_version("admin_hardware_stage_update",
+    changes = {
       "hardware_stage" => [ old_stage, new_stage ],
       "project_kind" => [ hardware_stage_label(old_stage), hardware_stage_label(new_stage) ],
       "reason" => reason,
-      "funding_lock_bypassed" => funding_lock_bypassed)
+      "funding_lock_bypassed" => funding_lock_bypassed
+    }
+    changes["project_type"] = [ old_project_type, nil ] if clear_classifier
+    log_admin_version("admin_hardware_stage_update", changes)
 
     redirect_to admin_project_path(@project),
                 notice: "Project kind changed from #{hardware_stage_label(old_stage)} to #{hardware_stage_label(new_stage)}."

@@ -44,6 +44,25 @@ class Admin::ProjectsControllerTest < ActionDispatch::IntegrationTest
     assert_equal true, version.object_changes["funding_lock_bypassed"]
   end
 
+  test "overriding to software clears a stale Hardware classifier so the project rejoins the queue" do
+    @project.update_columns(project_type: "Hardware")
+
+    sign_in @admin
+
+    patch update_hardware_stage_admin_project_path(@project), params: {
+      hardware_stage: "",
+      reason: "AI mislabeled this; it's actually software."
+    }
+
+    @project.reload
+    assert_nil @project.hardware_stage
+    assert_nil @project.project_type, "stale Hardware classifier should be cleared on a software override"
+
+    version = PaperTrail::Version.where(item_type: "Project", item_id: @project.id.to_s).order(:created_at).last
+    assert_equal "admin_hardware_stage_update", version.event
+    assert_equal [ "Hardware", nil ], version.object_changes["project_type"]
+  end
+
   test "helper cannot change project kind" do
     helper = create_user(slack_id: "U_HELPER_PROJECTS", display_name: "helperprojects")
     helper.update!(granted_roles: %w[helper])
