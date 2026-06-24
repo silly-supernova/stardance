@@ -63,6 +63,27 @@ class Admin::ProjectsControllerTest < ActionDispatch::IntegrationTest
     assert_equal [ "Hardware", nil ], version.object_changes["project_type"]
   end
 
+  test "software override clears the classifier even when the project is already software" do
+    # hardware_stage already nil (software), but the AI mislabeled it Hardware.
+    already_software = Project.create!(title: "Mislabeled SW", project_type: "Hardware")
+    already_software.memberships.create!(user: @owner, role: :owner)
+
+    sign_in @admin
+
+    patch update_hardware_stage_admin_project_path(already_software), params: {
+      hardware_stage: "",
+      reason: "AI mislabeled this; it's software and should be reviewable."
+    }
+
+    already_software.reload
+    assert_nil already_software.hardware_stage
+    assert_nil already_software.project_type, "stale Hardware classifier should clear even with no stage change"
+
+    version = PaperTrail::Version.where(item_type: "Project", item_id: already_software.id.to_s).order(:created_at).last
+    assert_equal "admin_hardware_stage_update", version.event
+    assert_equal [ "Hardware", nil ], version.object_changes["project_type"]
+  end
+
   test "helper cannot change project kind" do
     helper = create_user(slack_id: "U_HELPER_PROJECTS", display_name: "helperprojects")
     helper.update!(granted_roles: %w[helper])

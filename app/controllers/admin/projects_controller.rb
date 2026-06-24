@@ -102,17 +102,20 @@ class Admin::ProjectsController < Admin::ApplicationController
       return
     end
 
-    if old_stage == new_stage
+    # Setting Software overrules the AI classifier. Without this, a stale
+    # project_type == "Hardware" would keep the project out of the review queue
+    # (Certification::Ship.excluding_hardware) even after the override — even
+    # when the project is already Software, so this is reachable past the no-op
+    # guard below.
+    old_project_type = @project.project_type
+    clear_classifier = new_stage.nil? && old_project_type == "Hardware"
+
+    if old_stage == new_stage && !clear_classifier
       redirect_to admin_project_path(@project), alert: "Project kind is already #{hardware_stage_label(new_stage)}."
       return
     end
 
     funding_lock_bypassed = @project.has_any_funding_request?
-    # Setting Software overrules the AI classifier. Without this, a stale
-    # project_type == "Hardware" would keep the project out of the review queue
-    # (Certification::Ship.excluding_hardware) even after the override.
-    old_project_type = @project.project_type
-    clear_classifier = new_stage.nil? && old_project_type == "Hardware"
 
     @project.hardware_stage = new_stage
     @project.project_type = nil if clear_classifier
@@ -129,8 +132,12 @@ class Admin::ProjectsController < Admin::ApplicationController
     changes["project_type"] = [ old_project_type, nil ] if clear_classifier
     log_admin_version("admin_hardware_stage_update", changes)
 
-    redirect_to admin_project_path(@project),
-                notice: "Project kind changed from #{hardware_stage_label(old_stage)} to #{hardware_stage_label(new_stage)}."
+    notice = if old_stage == new_stage
+      "Cleared the stale Hardware classifier; project kind stays #{hardware_stage_label(new_stage)}."
+    else
+      "Project kind changed from #{hardware_stage_label(old_stage)} to #{hardware_stage_label(new_stage)}."
+    end
+    redirect_to admin_project_path(@project), notice: notice
   end
 
   # Wipes the project's most recent ship: destroys the ship event (and, via
