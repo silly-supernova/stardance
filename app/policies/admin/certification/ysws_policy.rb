@@ -4,7 +4,6 @@ class Admin::Certification::YswsPolicy < ApplicationPolicy
   end
 
   def show?
-    return true if user.nil? # temp bypass for dev
     user.can_review_ysws? && user.can_review_project_category?(record.try(:project))
   end
 
