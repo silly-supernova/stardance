@@ -37,6 +37,7 @@ class Admin::Certification::FundingRequestsController < Admin::Certification::Ap
     authorize @funding_request
     @reviewed_today = ::Certification::FundingRequest.reviewed_today(current_user)
     @lapse_timelapses = lapse_timelapses_for_review
+    @lookout_recordings = lookout_recordings_for_review
   end
 
   def update
@@ -49,6 +50,7 @@ class Admin::Certification::FundingRequestsController < Admin::Certification::Ap
     else
       @reviewed_today = ::Certification::FundingRequest.reviewed_today(current_user)
       @lapse_timelapses = lapse_timelapses_for_review
+      @lookout_recordings = lookout_recordings_for_review
       render :show, status: :unprocessable_entity
     end
   end
@@ -75,16 +77,36 @@ class Admin::Certification::FundingRequestsController < Admin::Certification::Ap
     @funding_request = ::Certification::FundingRequest.find(params[:id])
   end
 
+  # Both fetches below fan out to live HTTP (per Hackatime key / Lookout session)
+  # on every render, including the re-render after a failed verdict submit. The
+  # provider URLs only expire after ~1h, so a short cache keyed by project kills
+  # the repeat fan-out without meaningfully staling them.
+  RECORDINGS_CACHE_TTL = 1.minute
+
   # Lapse timelapses the builder recorded for *this* project, joined via the
   # project's Hackatime keys and the submitter's Hackatime id so reviewers see
   # the videos tied to the submission rather than the builder's whole library.
   # Returns [] when the submitter has no Hackatime link or the project has no
   # linked Hackatime keys.
   def lapse_timelapses_for_review
-    LapseService.timelapses_for_project(
-      hackatime_user_id: @funding_request.owner&.hackatime_identity&.uid,
-      project_keys: @funding_request.project.hackatime_keys
-    )
+    Rails.cache.fetch(recordings_cache_key("lapse"), expires_in: RECORDINGS_CACHE_TTL) do
+      LapseService.timelapses_for_project(
+        hackatime_user_id: @funding_request.owner&.hackatime_identity&.uid,
+        project_keys: @funding_request.project.hackatime_keys
+      )
+    end
+  end
+
+  # The project's finished Lookout screen recordings, refreshed live (Lookout's
+  # stored video URLs expire). Returns [] when the project has none.
+  def lookout_recordings_for_review
+    Rails.cache.fetch(recordings_cache_key("lookout"), expires_in: RECORDINGS_CACHE_TTL) do
+      LookoutService.recordings_for_project(@funding_request.project)
+    end
+  end
+
+  def recordings_cache_key(source)
+    [ "funding_review_recordings", source, @funding_request.project_id ]
   end
 
   # The .app-layout wrapper reserves the sidebar gutter itself; this body class

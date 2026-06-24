@@ -1,7 +1,11 @@
 class Admin::Certification::YswsPolicy < ApplicationPolicy
   def index?
+<<<<<<< hardware-goi
     return true if user.nil? # temp bypass for dev
     user.can_review_ysws?
+=======
+    user.admin? || user.has_role?(:guardian_of_integrity)
+>>>>>>> main
   end
 
   def show?
