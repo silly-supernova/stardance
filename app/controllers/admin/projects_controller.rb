@@ -126,9 +126,10 @@ class Admin::ProjectsController < Admin::ApplicationController
 
   # Wipes the project's most recent ship: destroys the ship event (and, via
   # dependent associations, its post, ledger entries, vote assignments and
-  # mission submission; votes are nullified), removes the matching review, and
-  # resets the project to an un-shipped draft. Used to fully un-stick a project
-  # that was shipped under the wrong kind. Refuses to touch a paid-out ship.
+  # mission submission; votes are nullified), removes the matching review and
+  # any YSWS review it generated, and resets the project to an un-shipped draft.
+  # Used to fully un-stick a project that was shipped under the wrong kind.
+  # Refuses to touch a paid-out ship.
   def clear_latest_ship
     @project = ::Project.unscoped.find(params[:id])
     authorize @project, :update?
@@ -161,7 +162,12 @@ class Admin::ProjectsController < Admin::ApplicationController
     }
 
     ApplicationRecord.transaction do
-      @project.ship_reviews.order(created_at: :desc).first&.destroy!
+      review = @project.ship_reviews.order(created_at: :desc).first
+      # YSWS reviews FK to both the ship event and its review with no cascade /
+      # dependent, so clear them first or the destroys below hit InvalidForeignKey.
+      ::Certification::Ysws.where(post_ship_event_id: ship_event.id).destroy_all
+      ::Certification::Ysws.where(ship_cert_id: review.id).destroy_all if review
+      review&.destroy!
       ship_event.destroy!
       remaining_latest = @project.ship_event_posts.maximum(:created_at)
       @project.update_columns(ship_status: "draft", shipped_at: remaining_latest)

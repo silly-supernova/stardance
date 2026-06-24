@@ -83,6 +83,31 @@ class Admin::ProjectsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Converted to hardware; clearing the bad software ship.", version.object_changes["reason"]
   end
 
+  test "clearing a ship also removes the YSWS review it generated" do
+    ship_event = Post::ShipEvent.create!(body: "Approved ship", certification_status: "approved", hours_at_ship: 1)
+    Post.create!(project: @project, user: @owner, postable: ship_event)
+    review = @project.ship_reviews.create!(status: :approved, reviewer: @admin)
+    Certification::Ysws.create!(
+      post_ship_event: ship_event,
+      ship_cert: review,
+      project: @project,
+      user: @owner,
+      original_minutes: 60
+    )
+    @project.update_column(:ship_status, "approved")
+
+    sign_in @admin
+
+    assert_difference [ "Post::ShipEvent.count", "Certification::Ship.count", "Certification::Ysws.count" ], -1 do
+      post clear_latest_ship_admin_project_path(@project), params: {
+        reason: "Wrong kind; clearing the approved ship and its YSWS review."
+      }
+    end
+
+    assert_redirected_to admin_project_path(@project)
+    assert_equal "draft", @project.reload.ship_status
+  end
+
   test "cannot clear a ship that has already paid out" do
     ship_event = Post::ShipEvent.create!(body: "Paid", certification_status: "approved", hours_at_ship: 1, payout: 42.0)
     Post.create!(project: @project, user: @owner, postable: ship_event)
