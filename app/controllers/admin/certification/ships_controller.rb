@@ -1,6 +1,7 @@
 class Admin::Certification::ShipsController < Admin::Certification::ApplicationController
   before_action :release_other_claims, only: [ :next ]
   before_action :set_ship, only: [ :show, :update, :set_project_type, :report_fraud ]
+  before_action :redirect_hardware_ship_review, only: [ :show ]
   before_action :set_submitter_context, only: [ :show, :update ]
   before_action :set_body_class, only: [ :index, :show, :update, :logs ]
 
@@ -14,7 +15,7 @@ class Admin::Certification::ShipsController < Admin::Certification::ApplicationC
     @to           = parse_date(params[:to])
     @project_type = params[:project_type].presence
 
-    scope = policy_scope(::Certification::Ship)
+    scope = policy_scope(::Certification::Ship).merge(::Certification::Ship.non_hardware)
     scope = scope.where(status: @status) unless @status == "all"
     scope = scope.where("certification_ship_reviews.created_at >= ?", @from.beginning_of_day) if @from
     scope = scope.where("certification_ship_reviews.created_at <= ?", @to.end_of_day) if @to
@@ -36,12 +37,12 @@ class Admin::Certification::ShipsController < Admin::Certification::ApplicationC
 
     @own_project_ids = current_user.memberships.pluck(:project_id).to_set
 
-    @stats = ::Certification::Ship.dashboard_stats
+    @stats = ::Certification::Ship.non_hardware.dashboard_stats
     @lb_period = params[:lb].presence_in(%w[daily weekly alltime]) || "daily"
     @leaderboards = {
-      "daily" => ::Certification::Ship.leaderboard(:daily),
-      "weekly" => ::Certification::Ship.leaderboard(:weekly),
-      "alltime" => ::Certification::Ship.leaderboard(:alltime)
+      "daily" => ::Certification::Ship.non_hardware.leaderboard(:daily),
+      "weekly" => ::Certification::Ship.non_hardware.leaderboard(:weekly),
+      "alltime" => ::Certification::Ship.non_hardware.leaderboard(:alltime)
     }
   end
 
@@ -55,6 +56,7 @@ class Admin::Certification::ShipsController < Admin::Certification::ApplicationC
     @to = parse_date(params[:to])
 
     scope = policy_scope(::Certification::Ship)
+              .merge(::Certification::Ship.non_hardware)
               .where.not(status: :pending)
               .includes(:reviewer, project: { memberships: :user })
 
@@ -139,7 +141,7 @@ class Admin::Certification::ShipsController < Admin::Certification::ApplicationC
   def next
     authorize ::Certification::Ship
     skip_ids = parse_skip_ids
-    candidate = ::Certification::Ship.next_eligible(current_user, skip_ids: skip_ids)
+    candidate = ::Certification::Ship.non_hardware.next_eligible(current_user, skip_ids: skip_ids)
     if candidate.nil?
       redirect_to admin_certification_ships_path, notice: "Queue is empty." and return
     end
@@ -163,6 +165,16 @@ class Admin::Certification::ShipsController < Admin::Certification::ApplicationC
 
   def set_ship
     @ship = ::Certification::Ship.find(params[:id])
+  end
+
+  def redirect_hardware_ship_review
+    return unless @ship.project&.hardware?
+
+    if Flipper.enabled?(:hardware_flow, current_user)
+      redirect_to admin_certification_hardware_review_path(@ship.project_id)
+    else
+      head :not_found
+    end
   end
 
   def ship_redirect_path
@@ -199,7 +211,7 @@ class Admin::Certification::ShipsController < Admin::Certification::ApplicationC
   end
 
   def release_other_claims
-    ::Certification::Ship.release_all_for(current_user) if current_user.present?
+    ::Certification::Ship.non_hardware.release_all_for(current_user) if current_user.present?
   end
 
   def parse_skip_ids
