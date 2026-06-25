@@ -103,6 +103,10 @@ module Certification
         .where.not(project_id: user.memberships.select(:project_id))
     }
 
+    scope :non_hardware, -> {
+      joins(:project).where(projects: { hardware_stage: nil })
+    }
+
     scope :by_project_type, ->(type) {
       type == "unclassified" \
         ? joins(:project).where(projects: { project_type: nil })
@@ -123,6 +127,7 @@ module Certification
     # (every reviewer shares one queue), so this is intentionally not scoped
     # to the current user the way the listing is.
     def self.dashboard_stats(now: Time.current)
+      ships_table = table_name
       today = now.beginning_of_day
       week = now.beginning_of_week
       approved_count = where(status: :approved).count
@@ -138,7 +143,7 @@ module Certification
       end
 
       avg_decision_secs = decided.where.not(decided_at: nil)
-        .average(Arel.sql("EXTRACT(EPOCH FROM (decided_at - created_at))"))
+        .average(Arel.sql("EXTRACT(EPOCH FROM (#{ships_table}.decided_at - #{ships_table}.created_at))"))
       avg_decision_hours = avg_decision_secs ? (avg_decision_secs / 3600.0).round(1) : nil
 
       {
@@ -154,7 +159,7 @@ module Certification
         oldest_pending: where(status: :pending).order(created_at: :asc).first,
         queue_target: QUEUE_TARGET,
         sla_days: SLA_DAYS,
-        overdue_pending: where(status: :pending).where("created_at < ?", now - SLA_DAYS.days).count,
+        overdue_pending: where(status: :pending).where("#{ships_table}.created_at < ?", now - SLA_DAYS.days).count,
         median_pending_wait_hours: median_pending_wait,
         avg_decision_hours: avg_decision_hours
       }

@@ -7,12 +7,12 @@ class Admin::Certification::Ships::ClaimsController < Admin::Certification::Appl
   def create
     authorize @ship, policy_class: Admin::Certification::Ships::ClaimPolicy
 
-    ::Certification::Ship.release_all_for(current_user)
+    release_surface_claims
     claimed = ::Certification::Ship.atomic_claim!(@ship.id, current_user)
     if claimed
-      redirect_to hardware_redirect? ? hardware_review_path : admin_certification_ship_path(claimed)
+      redirect_to hardware_surface? ? hardware_review_path : admin_certification_ship_path(claimed)
     else
-      redirect_to hardware_redirect? ? hardware_review_path : admin_certification_ships_path,
+      redirect_to hardware_surface? ? hardware_review_path : admin_certification_ships_path,
                   alert: "Couldn't claim that review, someone else got it"
     end
   end
@@ -22,7 +22,7 @@ class Admin::Certification::Ships::ClaimsController < Admin::Certification::Appl
     authorize @ship, policy_class: Admin::Certification::Ships::ClaimPolicy
 
     @ship.release_claim!
-    redirect_to hardware_redirect? ? hardware_review_path : admin_certification_ship_path(@ship),
+    redirect_to hardware_surface? ? hardware_review_path : admin_certification_ship_path(@ship),
                 notice: "Unclaimed review for \u201c#{@ship.project.title}.\u201d"
   end
 
@@ -36,6 +36,20 @@ class Admin::Certification::Ships::ClaimsController < Admin::Certification::Appl
   # the reviewer sent back to it rather than to the ship queue.
   def hardware_redirect?
     params[:redirect_to_hardware].present?
+  end
+
+  def hardware_surface?
+    hardware_redirect? || @ship.project&.hardware?
+  end
+
+  def release_surface_claims
+    scope = if hardware_surface?
+      ::Certification::Ship.joins(:project).where.not(projects: { hardware_stage: nil })
+    else
+      ::Certification::Ship.non_hardware
+    end
+
+    scope.release_all_for(current_user)
   end
 
   def hardware_review_path
