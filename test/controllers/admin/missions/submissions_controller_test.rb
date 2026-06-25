@@ -44,28 +44,24 @@ class Admin::Missions::SubmissionsControllerTest < ActionDispatch::IntegrationTe
     assert @submission.reload.pending?
   end
 
-  test "plain reject leaves the project attached and the balance untouched" do
+  test "plain reject leaves the project attached to the mission" do
     sign_in @reviewer
     Mission::Submission.atomic_claim!(@submission.id, @reviewer)
 
-    assert_no_difference -> { @builder.reload.balance } do
-      patch admin_mission_submission_path(@mission.slug, @submission),
-            params: { mission_submission: { status: "rejected", feedback: "Needs work" } }
-    end
+    patch admin_mission_submission_path(@mission.slug, @submission),
+          params: { mission_submission: { status: "rejected", feedback: "Needs work" } }
 
     assert_redirected_to next_admin_mission_submissions_path(@mission.slug)
     assert @submission.reload.rejected?
     assert_equal @mission, @project.reload.current_mission
   end
 
-  test "reject and detach frees the project and deducts 5 stardust" do
+  test "reject and detach frees the project from the mission" do
     sign_in @reviewer
     Mission::Submission.atomic_claim!(@submission.id, @reviewer)
 
-    assert_difference -> { @builder.reload.balance }, -5 do
-      patch admin_mission_submission_path(@mission.slug, @submission),
-            params: { mission_submission: { status: "rejected", feedback: "Needs work", detach_project: "1" } }
-    end
+    patch admin_mission_submission_path(@mission.slug, @submission),
+          params: { mission_submission: { status: "rejected", feedback: "Needs work", detach_project: "1" } }
 
     assert_redirected_to next_admin_mission_submissions_path(@mission.slug)
     assert @submission.reload.rejected?
@@ -76,10 +72,8 @@ class Admin::Missions::SubmissionsControllerTest < ActionDispatch::IntegrationTe
     sign_in @reviewer
     Mission::Submission.atomic_claim!(@submission.id, @reviewer)
 
-    assert_no_difference -> { @builder.reload.balance } do
-      patch admin_mission_submission_path(@mission.slug, @submission),
-            params: { mission_submission: { status: "approved", detach_project: "1" } }
-    end
+    patch admin_mission_submission_path(@mission.slug, @submission),
+          params: { mission_submission: { status: "approved", detach_project: "1" } }
 
     assert @submission.reload.approved?
     assert_equal @mission, @project.reload.current_mission

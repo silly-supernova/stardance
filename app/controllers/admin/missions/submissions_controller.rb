@@ -3,10 +3,6 @@ module Admin
     class SubmissionsController < BaseController
       layout "application"
 
-      # Stardust deducted from the builder when a reviewer rejects and detaches
-      # their project from the mission.
-      DETACH_PENALTY = 5
-
       skip_before_action :authorize_mission_management
       before_action :release_other_claims, only: [ :next, :claim ]
       before_action :set_submission, only: [ :show, :update, :claim, :undo ]
@@ -117,7 +113,7 @@ module Admin
         notify_builder(new_status)
 
         reviewed = Mission::Submission.reviewed_today(current_user, mission: @mission)
-        verdict = detached ? "Rejected and detached the project (−#{DETACH_PENALTY} stardust)" : new_status.titleize
+        verdict = detached ? "Rejected and detached the project" : new_status.titleize
         redirect_to next_admin_mission_submissions_path(mission_slug),
                     notice: "#{verdict}. That's #{reviewed} reviewed today."
       end
@@ -293,31 +289,16 @@ module Admin
 
       # Detaches the submission's project from the mission it was rejected on,
       # but only while that mission is still the project's current one — so we
-      # never yank a mission the builder has since swapped to. Charges the
-      # builder DETACH_PENALTY stardust when it actually detaches, and returns
-      # whether a detach happened. The MissionAttachment change is versioned by
-      # PaperTrail and the ledger entry writes its own balance_adjustment audit
-      # (whodunnit set in the admin controller chain).
+      # never yank a mission the builder has since swapped to. Returns whether
+      # a detach actually happened. The MissionAttachment change is versioned
+      # by PaperTrail (whodunnit set in the admin controller chain).
       def detach_submission_project!
         project = @submission.ship_event&.post&.project
         return false unless project
         return false unless project.current_mission == @submission.mission
 
         project.detach_mission!
-        charge_detach_penalty
         true
-      end
-
-      def charge_detach_penalty
-        builder = @submission.ship_event&.post&.user
-        return unless builder
-
-        builder.ledger_entries.create!(
-          amount: -DETACH_PENALTY,
-          reason: "Mission detach penalty: #{@submission.mission.name}",
-          created_by: "mission_submission:#{@submission.id} detach (#{current_user.id})",
-          ledgerable: builder
-        )
       end
 
       def notify_builder(status)
