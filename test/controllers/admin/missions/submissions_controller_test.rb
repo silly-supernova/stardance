@@ -44,6 +44,47 @@ class Admin::Missions::SubmissionsControllerTest < ActionDispatch::IntegrationTe
     assert @submission.reload.pending?
   end
 
+  test "plain reject leaves the project attached and the balance untouched" do
+    sign_in @reviewer
+    Mission::Submission.atomic_claim!(@submission.id, @reviewer)
+
+    assert_no_difference -> { @builder.reload.balance } do
+      patch admin_mission_submission_path(@mission.slug, @submission),
+            params: { mission_submission: { status: "rejected", feedback: "Needs work" } }
+    end
+
+    assert_redirected_to next_admin_mission_submissions_path(@mission.slug)
+    assert @submission.reload.rejected?
+    assert_equal @mission, @project.reload.current_mission
+  end
+
+  test "reject and detach frees the project and deducts 5 stardust" do
+    sign_in @reviewer
+    Mission::Submission.atomic_claim!(@submission.id, @reviewer)
+
+    assert_difference -> { @builder.reload.balance }, -5 do
+      patch admin_mission_submission_path(@mission.slug, @submission),
+            params: { mission_submission: { status: "rejected", feedback: "Needs work", detach_project: "1" } }
+    end
+
+    assert_redirected_to next_admin_mission_submissions_path(@mission.slug)
+    assert @submission.reload.rejected?
+    assert_nil @project.reload.current_mission
+  end
+
+  test "detach flag is ignored when approving" do
+    sign_in @reviewer
+    Mission::Submission.atomic_claim!(@submission.id, @reviewer)
+
+    assert_no_difference -> { @builder.reload.balance } do
+      patch admin_mission_submission_path(@mission.slug, @submission),
+            params: { mission_submission: { status: "approved", detach_project: "1" } }
+    end
+
+    assert @submission.reload.approved?
+    assert_equal @mission, @project.reload.current_mission
+  end
+
   test "claims are exclusive while fresh and stealable when expired" do
     other = User.create!(email: "other-#{SecureRandom.hex(4)}@example.test",
                          display_name: "other-#{SecureRandom.hex(4)}",
