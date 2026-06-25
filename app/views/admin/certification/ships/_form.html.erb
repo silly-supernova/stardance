@@ -124,8 +124,13 @@
   <div class="review-form__actions">
     <%= f.submit "Submit verdict", class: "action-btn action-btn--large action-btn--primary",
           data: { "certification--video-drop-target": "submitBtn" } %>
-    <%= link_to "Skip and get next", next_admin_certification_ships_path(skip: ship.id),
-          class: "action-btn action-btn--small action-btn--secondary" %>
+    <% if local_assigns[:redirect_to_hardware] %>
+      <%= link_to "Skip and get next", next_admin_certification_hardware_reviews_path(skip: "ship:#{ship.id}"),
+            class: "action-btn action-btn--small action-btn--secondary" %>
+    <% else %>
+      <%= link_to "Skip and get next", next_admin_certification_ships_path(skip: ship.id),
+            class: "action-btn action-btn--small action-btn--secondary" %>
+    <% end %>
   </div>
 <% end %>
 

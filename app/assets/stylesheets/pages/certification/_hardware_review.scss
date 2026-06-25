@@ -1,9 +1,6 @@
-// Combined hardware review page (admin/certification/hardware_reviews#show).
-// Layers on top of `.ship-review` (which styles the panels, meta lists, verdict
-// cards and forms it reuses). This file only adds the two-stage framing: the
-// "you're reviewing DESIGN vs BUILD" banner, the numbered stage cards, and the
-// per-stage accent that lights up whichever stage is currently actionable.
-// Design = lilac, Build = mint, matching the brand palette.
+// Hardware review pages layer on top of the ship queue/review styles. Hardware
+// has one reviewer surface, with a compact pipeline summary instead of separate
+// funding/build review cards.
 
 .hardware-review {
   &__tag {
@@ -16,142 +13,28 @@
     border-radius: 999px;
   }
 
-  // The active-stage banner. Reads loudly so the reviewer can never mistake a
-  // design review for a build review.
-  &__banner {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: var(--space-s);
-    margin-bottom: var(--space-l);
-    padding: var(--space-s) var(--space-m);
-    font-weight: 700;
-    border: 1px solid;
-    border-radius: 10px;
-
-    &--design {
-      color: var(--color-brand-lilac);
-      background: rgba(235, 183, 255, 0.08);
-      border-color: rgba(235, 183, 255, 0.3);
-    }
-
-    &--build {
-      color: var(--color-brand-mint);
-      background: rgba(129, 255, 255, 0.08);
-      border-color: rgba(129, 255, 255, 0.2);
-    }
-
-    &--idle {
-      color: var(--color-space-text-muted, rgba(255, 255, 255, 0.7));
-      background: rgba(255, 255, 255, 0.04);
-      border-color: rgba(255, 255, 255, 0.1);
-    }
-  }
-
-  &__banner-eyebrow {
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    opacity: 0.8;
-  }
-
-  &__banner-stage {
-    font-size: 1.1rem;
-  }
-
-  &__stages {
+  &__timeline {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: var(--space-l);
-    margin-bottom: var(--space-l);
-
-    @media (max-width: 900px) {
-      grid-template-columns: 1fr;
-    }
+    gap: var(--space-s);
   }
 
-  &__stage {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-m);
-    padding: var(--space-l);
-    background: var(--color-space-card, rgba(255, 255, 255, 0.04));
-    border: 1px solid var(--color-space-border, rgba(255, 255, 255, 0.1));
-    border-radius: 14px;
-    transition:
-      border-color 120ms ease,
-      box-shadow 120ms ease,
-      opacity 120ms ease;
-
-    // Dim the stage that isn't being reviewed right now so focus lands on the
-    // active one.
-    &--inactive {
-      opacity: 0.7;
-    }
-
-    &--active {
-      &.hardware-review__stage--design {
-        border-color: rgba(235, 183, 255, 0.5);
-        box-shadow: 0 0 24px rgba(235, 183, 255, 0.15);
-      }
-
-      &.hardware-review__stage--build {
-        border-color: rgba(129, 255, 255, 0.45);
-        box-shadow: 0 0 24px rgba(129, 255, 255, 0.12);
-      }
-    }
-  }
-
-  &__stage-head {
+  &__timeline-item {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: var(--space-s);
+    padding: var(--space-s);
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
   }
 
-  &__stage-num {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 1.8rem;
-    height: 1.8rem;
-    font-weight: 800;
-    background: rgba(255, 255, 255, 0.06);
-    border-radius: 50%;
-
-    .hardware-review__stage--design & {
-      color: var(--color-brand-lilac);
-    }
-
-    .hardware-review__stage--build & {
-      color: var(--color-brand-mint);
-    }
+  &__timeline-label {
+    min-width: 10rem;
+    font-weight: 700;
   }
 
-  &__stage-title {
-    margin: 0;
-    font-size: var(--font-size-l);
-  }
-
-  &__stage-kind {
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
+  &__timeline-meta {
     color: var(--color-space-text-muted, rgba(255, 255, 255, 0.7));
-  }
-
-  &__empty {
-    margin: 0;
-    font-style: italic;
-    line-height: var(--line-height-body);
-    color: var(--color-space-text-muted, rgba(255, 255, 255, 0.7));
-  }
-
-  // Sits next to the approved design verdict to call out the grant the approval
-  // unlocked.
-  &__grant {
-    margin-left: var(--space-s);
-    font-weight: 600;
-    color: var(--color-brand-mint);
   }
 }
