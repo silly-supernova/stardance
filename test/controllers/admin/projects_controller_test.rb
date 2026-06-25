@@ -167,4 +167,49 @@ class Admin::ProjectsControllerTest < ActionDispatch::IntegrationTest
     assert_response :forbidden
     assert_equal "returned", ship_event.reload.certification_status
   end
+
+  test "resetting the latest ship closes a pending review so it leaves the queue" do
+    project = Project.create!(title: "Submitted software")
+    project.memberships.create!(user: @owner, role: :owner)
+    ship_event = Post::ShipEvent.create!(body: "Submitted", certification_status: "pending", hours_at_ship: 1)
+    Post.create!(project: project, user: @owner, postable: ship_event)
+    reviewer = create_user(slack_id: "U_REVIEWER_RESET", display_name: "reviewerreset")
+    review = project.ship_reviews.create!(status: :pending, reviewer: reviewer, claimed_at: Time.current, claim_expires_at: 30.minutes.from_now)
+    project.update_columns(ship_status: "submitted", shipped_at: Time.current)
+
+    sign_in @admin
+    assert_includes Certification::Ship.available_for(reviewer), review, "baseline: the pending review is in the queue"
+
+    assert_no_difference "Certification::Ship.count" do
+      post reset_latest_ship_admin_project_path(project), params: { reason: "Reset so the owner can re-ship." }
+    end
+
+    review.reload
+    assert_equal "returned", review.status, "pending review is resolved, not left stale"
+    assert_nil review.reviewer_id, "claim released"
+    assert_not_includes Certification::Ship.available_for(reviewer), review
+  end
+
+  test "converting to hardware closes the open software review so it isn't misrouted" do
+    project = Project.create!(title: "Software that's really hardware")
+    project.memberships.create!(user: @owner, role: :owner)
+    ship_event = Post::ShipEvent.create!(body: "Submitted", certification_status: "pending", hours_at_ship: 1)
+    Post.create!(project: project, user: @owner, postable: ship_event)
+    review = project.ship_reviews.create!(status: :pending)
+    project.update_column(:ship_status, "submitted")
+
+    sign_in @admin
+
+    assert_no_difference "Certification::Ship.count" do
+      patch update_hardware_stage_admin_project_path(project), params: {
+        hardware_stage: "design",
+        reason: "This is a hardware project."
+      }
+    end
+
+    assert_equal "design", project.reload.hardware_stage
+    review.reload
+    assert_equal "returned", review.status, "the software review is closed when the project becomes hardware"
+    assert_nil review.reviewer_id
+  end
 end

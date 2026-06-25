@@ -116,11 +116,17 @@ class Admin::ProjectsController < Admin::ApplicationController
     end
 
     funding_lock_bypassed = @project.has_any_funding_request?
+    resolved_review_ids = []
 
     @project.hardware_stage = new_stage
     @project.project_type = nil if clear_classifier
-    ::PaperTrail.request(enabled: false) do
-      @project.save!(validate: false)
+    ApplicationRecord.transaction do
+      ::PaperTrail.request(enabled: false) do
+        @project.save!(validate: false)
+      end
+      # A now-hardware project's open software review is misrouted — close it so
+      # it doesn't sit stale (it's already filtered out of auto-assignment).
+      resolved_review_ids = resolve_open_ship_reviews!("Converted to hardware by staff; software ship review closed: #{reason}") if new_stage.present?
     end
 
     changes = {
@@ -130,6 +136,7 @@ class Admin::ProjectsController < Admin::ApplicationController
       "funding_lock_bypassed" => funding_lock_bypassed
     }
     changes["project_type"] = [ old_project_type, nil ] if clear_classifier
+    changes["resolved_ship_review_ids"] = resolved_review_ids if resolved_review_ids.any?
     log_admin_version("admin_hardware_stage_update", changes)
 
     notice = if old_stage == new_stage
@@ -172,17 +179,24 @@ class Admin::ProjectsController < Admin::ApplicationController
 
     old_status = @project.ship_status
     old_cert = ship_event.certification_status
+    resolved_review_ids = []
 
     ApplicationRecord.transaction do
       ship_event.update_columns(certification_status: "pending")
+      # Don't leave a pending review behind for a project that's no longer
+      # submitted — it would sit stale in the queue / get picked by a reviewer.
+      resolved_review_ids = resolve_open_ship_reviews!("Latest ship reset to draft by staff: #{reason}")
       @project.update_columns(ship_status: "draft", shipped_at: nil)
     end
 
-    log_admin_version("admin_reset_latest_ship",
+    changes = {
       "ship_status" => [ old_status, "draft" ],
       "ship_event_id" => ship_event.id,
       "certification_status" => [ old_cert, "pending" ],
-      "reason" => reason)
+      "reason" => reason
+    }
+    changes["resolved_ship_review_ids"] = resolved_review_ids if resolved_review_ids.any?
+    log_admin_version("admin_reset_latest_ship", changes)
 
     redirect_to admin_project_path(@project),
                 notice: "Reset the latest ship back to draft. Nothing was deleted — the ship and its review are preserved."
@@ -227,6 +241,28 @@ class Admin::ProjectsController < Admin::ApplicationController
   end
 
   private
+
+  # Takes any still-open (pending) ship review out of the reviewer queue when a
+  # staff action makes it moot, so a review is never left stale or routed to the
+  # wrong reviewer. Non-destructive — the review row is kept, just marked
+  # returned, unclaimed and stamped with an internal note. Uses update_all to
+  # skip the verdict / notify-owner / stardust callbacks. Returns affected ids.
+  def resolve_open_ship_reviews!(note)
+    reviews = @project.ship_reviews.where(status: :pending)
+    ids = reviews.pluck(:id)
+    return ids if ids.empty?
+
+    reviews.update_all(
+      status: ::Certification::Ship.statuses[:returned],
+      reviewer_id: nil,
+      claimed_at: nil,
+      claim_expires_at: nil,
+      decided_at: Time.current,
+      internal_reason: note,
+      updated_at: Time.current
+    )
+    ids
+  end
 
   # Records a staff action against @project in the PaperTrail audit log.
   def log_admin_version(event, object_changes)
