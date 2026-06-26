@@ -178,7 +178,7 @@ class Admin::ProjectsController < Admin::ApplicationController
     end
 
     old_status = @project.ship_status
-    old_cert = ship_event.certification_status
+    old_ship_status = ship_event.certification_status
     resolved_review_ids = []
 
     ApplicationRecord.transaction do
@@ -192,7 +192,7 @@ class Admin::ProjectsController < Admin::ApplicationController
     changes = {
       "ship_status" => [ old_status, "draft" ],
       "ship_event_id" => ship_event.id,
-      "certification_status" => [ old_cert, "pending" ],
+      "certification_status" => [ old_ship_status, "pending" ],
       "reason" => reason
     }
     changes["resolved_ship_review_ids"] = resolved_review_ids if resolved_review_ids.any?
