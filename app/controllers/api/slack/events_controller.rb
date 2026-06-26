@@ -1,8 +1,7 @@
 module Api
   module Slack
     class EventsController < ActionController::API
-      skip_before_action :verify_authenticity_token, raise: false
-      before_action :verify_slack_signature, except: []
+      before_action :verify_slack_signature
 
       def create
         case params[:type]
