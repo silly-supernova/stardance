@@ -1,0 +1,271 @@
+/* Import Google Fonts for the Dark Academia / Cosmic Aesthetic */
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Playfair+Display:ital,wght@0,600;0,700;1,400&display=swap');
+
+/* ==========================================================
+THE COFFEE-COSMIC CORE VARIABLES
+========================================================== */
+:root {
+    --bg-space: #C4A484;        /* Deep rich espresso base */
+    --bg-card: #261a15;         /* Elegant roasted-bean container tone */
+    --text-cream: #edebe9;      /* Crisp parchment cream text */
+    --text-beige: #0f0801;      /* Soft velvet-latte accent text */
+    --accent-blue: #70b3ff;     /* Glowing starlight cosmic blue */
+    --border-coffee: #4E3524;   /* Subtle structural binding lines */
+    
+    /* Font Pairings */
+    --font-header: 'Playfair Display', serif;
+    --font-mono: 'JetBrains Mono', monospace;
+}
+
+/* Enable satisfying smooth scroll anchors */
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    background-color: var(--bg-space);
+    /* Tactile Notebook Grid Pattern Texture Layer */
+    background-image: 
+        linear-gradient(rgba(92, 64, 51, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(92, 64, 51, 0.08) 1px, transparent 1px);
+    background-size: 20px 20px;
+    
+    color: var(--text-cream);
+    font-family: var(--font-mono);
+    margin: 0;
+    padding: 60px 20px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    box-sizing: border-box;
+}
+
+/* ==========================================================
+STYLISH AESTHETIC TYPOGRAPHY
+========================================================== */
+.mega-title {
+    font-family: var(--font-header);
+    font-size: 4.2rem; 
+    font-weight: 700;
+    font-style: italic; /* High-fashion academic look */
+    letter-spacing: -0.5px;
+    margin: 0 0 15px 0;
+    background: linear-gradient(135deg, #ffffff, var(--text-beige));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.section-title {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--text-beige);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    opacity: 0.8;
+}
+
+/* Huge Photo Section Title */
+.mega-section-title {
+    font-family: var(--font-header);
+    font-size: 2.6rem;
+    font-weight: 700;
+    color: var(--accent-blue);
+    margin: 50px 0 8px 0;
+}
+
+.dump-sub {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--text-beige);
+    margin-bottom: 30px;
+}
+
+/* ==========================================================
+LAYOUTS & INTERACTIVE CARDS
+========================================================== */
+.terminal-frame {
+    background-color: transparent; 
+    border: none;                  
+    width: 100%;
+    max-width: 1200px;             
+}
+
+.container {
+    padding: 20px 0; 
+}
+
+.subtitle {
+    font-family: var(--font-header);
+    font-size: 1.4rem;
+    font-style: italic;
+    color: var(--text-beige);
+    margin: 0;
+    line-height: 1.6;
+}
+
+.highlight {
+    color: var(--accent-blue);
+    background: rgba(112, 179, 255, 0.08);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+}
+
+.minimal-hr {
+    border: 0;
+    height: 1px;
+    background-color: var(--border-coffee);
+    margin: 50px 0;
+}
+
+.status-list {
+    list-style: none;
+    padding: 0;
+    display: flex; 
+    gap: 20px;
+    flex-wrap: wrap;
+    margin: 25px 0;
+}
+
+.status-list li {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    background-color: rgba(38, 26, 21, 0.4);
+    padding: 10px 18px;
+    border: 1px solid var(--border-coffee);
+    border-radius: 8px;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.label {
+    color: var(--accent-blue);
+    font-weight: 500;
+    margin-right: 5px;
+}
+
+/* Expanded Grid setups */
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); 
+    gap: 30px;
+    margin-top: 30px;
+}
+
+.card-link {
+    text-decoration: none;
+    color: inherit;
+}
+
+.card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-coffee);
+    border-radius: 14px;
+    padding: 35px;
+    height: 100%; 
+    box-sizing: border-box;
+    transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1), border-color 0.3s ease, box-shadow 0.3s ease;
+    /* Subtle inside texture for card blocks */
+    background-image: linear-gradient(rgba(255,255,255,0.003) 50%, transparent 50%);
+    background-size: 100% 4px;
+}
+
+.card:hover {
+    transform: translateY(-6px);
+    border-color: rgba(112, 179, 255, 0.4);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4), 0 0 15px rgba(112, 179, 255, 0.05);
+}
+
+.card-tag {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--accent-blue);
+    font-weight: 500;
+    display: block;
+    margin-bottom: 15px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+}
+
+.card h3 {
+    font-family: var(--font-header);
+    font-size: 1.6rem;
+    font-weight: 600;
+    margin: 0 0 12px 0;
+}
+
+.card p {
+    font-family: var(--font-mono);
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--text-white);
+    line-height: 1.6;
+}
+
+.card p span {
+    display: block;
+    margin-top: 20px;
+    font-size: 0.8rem;
+    color: var(--accent-blue);
+    font-family: var(--font-mono);
+}
+
+/* ==========================================================
+PHOTO DUMP POLAROID GALLERY
+========================================================== */
+.photo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); 
+    gap: 30px;
+}
+
+.photo-card {
+    background-color: var(--bg-card);
+    padding: 16px;
+    border-radius: 14px;
+    border: 1px solid var(--border-coffee);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+}
+
+.photo-card img {
+    width: 100%;
+    height: 260px; 
+    object-fit: cover; 
+    border-radius: 10px;
+    background-color: rgba(0, 0, 0, 0.4); 
+}
+
+.img-caption {
+    display: block;
+    font-family: var(--font-header);
+    font-style: italic;
+    font-size: 0.95rem;
+    color: var(--text-tan);
+    margin-top: 14px;
+    text-align: center;
+}
+
+footer {
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--text-beige);
+    margin-top: 90px;
+    border-top: 1px dashed var(--border-coffee);
+    padding-top: 40px;
+    opacity: 0.7;
+}
+
+/* Responsive adjustment for phones */
+@media(max-width: 768px) {
+    .grid, .photo-grid {
+        grid-template-columns: 1fr;
+    }
+    .mega-title {
+        font-size: 2.8rem;
+    }
+    .status-list {
+        flex-direction: column;
+        gap: 12px;
+    }
+}
